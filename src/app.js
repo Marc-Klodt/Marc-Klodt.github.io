@@ -276,7 +276,13 @@ function renderWorkspace() {
   } else {
     body = `<div class="link-fallback"><div><h2>${escapeHtml(p.name)}</h2><p><a href="${escapeHtml(p.url || "#")}" target="_blank" rel="noopener">${escapeHtml(p.url || "")}</a></p></div></div>`;
   }
-  return `<section class="program-stage workspace" aria-label="${escapeHtml(p.name)}">${body}</section>`;
+  return `
+    <section class="program-stage workspace" aria-label="${escapeHtml(p.name)}">
+      <div class="workspace-toolbar">
+        <button class="btn" type="button" id="back-home">Zurück zur Hauptseite</button>
+      </div>
+      ${body}
+    </section>`;
 }
 
 function markNav(id) {
@@ -294,9 +300,7 @@ function bindStaticNav() {
     const home = e.target.closest("#nav-home");
     if (home) {
       e.preventDefault();
-      ui.workspace = null;
-      markNav("");
-      render();
+      goHome();
       return;
     }
     const item = e.target.closest("[data-open]");
@@ -306,7 +310,17 @@ function bindStaticNav() {
   });
 }
 
+function goHome() {
+  ui.workspace = null;
+  markNav("");
+  if (location.hash) {
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  render();
+}
+
 function bindNav() {
+  document.getElementById("back-home")?.addEventListener("click", goHome);
   root.querySelectorAll("[data-open]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
@@ -370,6 +384,18 @@ function closePw() {
   render();
 }
 
+const HASH_BY_ID = {
+  "logistik-ladeplan": "ladeplan",
+  "logistik-abc": "abc-analyse",
+  "logistik-lagerzonen": "abc-lagerzonen",
+};
+
+const ID_BY_HASH = {
+  ladeplan: "logistik-ladeplan",
+  "abc-analyse": "logistik-abc",
+  "abc-lagerzonen": "logistik-lagerzonen",
+};
+
 function openProgram(id) {
   const p = navPrograms().find((item) => item.id === id) || ui.programs.find((item) => item.id === id);
   if (!p) return;
@@ -378,6 +404,10 @@ function openProgram(id) {
     return;
   }
   ui.workspace = p;
+  const hash = HASH_BY_ID[id];
+  if (hash && location.hash !== "#" + hash) {
+    history.replaceState(null, "", "#" + hash);
+  }
   markNav(id);
   render();
 }
@@ -410,10 +440,17 @@ function enterPublic() {
   render();
 }
 
+function openFromHash() {
+  const key = (location.hash || "").replace(/^#/, "");
+  const id = ID_BY_HASH[key];
+  if (id) openProgram(id);
+}
+
 async function boot() {
   bindStaticNav();
   if (isStaticHost() || !(await hasApi())) {
     enterPublic();
+    openFromHash();
     return;
   }
   try {
@@ -425,20 +462,29 @@ async function boot() {
     ui.error = "";
   } catch (_) {
     enterPublic();
+    openFromHash();
     return;
   }
   render();
+  openFromHash();
 }
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (ui.workspace) {
-      ui.workspace = null;
-      render();
+      goHome();
     } else if (ui.accountOpen) {
       closePw();
     }
   }
+});
+
+window.addEventListener("hashchange", () => {
+  if (!location.hash) {
+    goHome();
+    return;
+  }
+  openFromHash();
 });
 
 boot();

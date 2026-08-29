@@ -1,0 +1,16 @@
+.ggl-backbar {
+  background: #12100e;
+  color: #f3eee4;
+  padding: 10px 16px;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+.ggl-backbar a {
+  color: #f3eee4;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ggl-backbar a:hover {
+  color: #d4a574;
+}

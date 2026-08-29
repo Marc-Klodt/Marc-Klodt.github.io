@@ -13,31 +13,31 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="src/style.css?v=3" />
+    <link rel="stylesheet" href="src/style.css?v=4" />
   </head>
   <body>
     <div class="app-layout">
       <nav class="sidenav" id="sidenav" aria-label="Programme">
         <a class="sidenav-home active" href="./" id="nav-home">
           <span class="logo" aria-hidden="true"><span class="logo-l">L</span><span class="logo-t">T</span></span>
-          <span>Logistik-Tools</span>
+          <span>Hauptseite</span>
         </a>
         <p class="sidenav-label">Programme</p>
         <ul class="sidenav-list">
           <li>
-            <a class="sidenav-item" href="programs/ladeplan/index.html" data-open="logistik-ladeplan">
+            <a class="sidenav-item" href="#ladeplan" data-open="logistik-ladeplan">
               <span class="sidenav-icon"><img src="programs/ladeplan/icons/ladeplan.svg" alt="" width="34" height="34" /></span>
               <span>Zweidimensionaler Ladeplan</span>
             </a>
           </li>
           <li>
-            <a class="sidenav-item" href="programs/abc-analyse/index.html" data-open="logistik-abc">
+            <a class="sidenav-item" href="#abc-analyse" data-open="logistik-abc">
               <span class="sidenav-icon"><img src="programs/abc-analyse/abc-icon.png" alt="" width="34" height="34" /></span>
               <span>ABC-Analyse</span>
             </a>
           </li>
           <li>
-            <a class="sidenav-item" href="programs/abc-lagerzonen/index.html" data-open="logistik-lagerzonen">
+            <a class="sidenav-item" href="#abc-lagerzonen" data-open="logistik-lagerzonen">
               <span class="sidenav-icon"><img src="programs/abc-lagerzonen/assets/lagerzonen-icon.png" alt="" width="34" height="34" /></span>
               <span>ABC-Lagerzonen</span>
             </a>
@@ -53,7 +53,7 @@
           </div>
         </header>
         <section class="overview" aria-label="Programme">
-          <a class="card" href="programs/ladeplan/index.html" data-open="logistik-ladeplan" style="--accent:#3b82f6">
+          <a class="card" href="#ladeplan" data-open="logistik-ladeplan" style="--accent:#3b82f6">
             <div class="tab"></div>
             <div class="card-body">
               <div class="icon"><img src="programs/ladeplan/icons/ladeplan.svg" alt="" width="42" height="42" /></div>
@@ -61,7 +61,7 @@
               <p>Zweidimensionaler Beladungsplaner für LKW jeglicher Art.</p>
             </div>
           </a>
-          <a class="card" href="programs/abc-analyse/index.html" data-open="logistik-abc" style="--accent:#e07a4a">
+          <a class="card" href="#abc-analyse" data-open="logistik-abc" style="--accent:#e07a4a">
             <div class="tab"></div>
             <div class="card-body">
               <div class="icon"><img src="programs/abc-analyse/abc-icon.png" alt="" width="42" height="42" /></div>
@@ -69,7 +69,7 @@
               <p>Bestands- und Umsatzklassifikation nach Jahresverbrauchswert.</p>
             </div>
           </a>
-          <a class="card" href="programs/abc-lagerzonen/index.html" data-open="logistik-lagerzonen" style="--accent:#3d8b4a">
+          <a class="card" href="#abc-lagerzonen" data-open="logistik-lagerzonen" style="--accent:#3d8b4a">
             <div class="tab"></div>
             <div class="card-body">
               <div class="icon"><img src="programs/abc-lagerzonen/assets/lagerzonen-icon.png" alt="" width="42" height="42" /></div>
@@ -80,10 +80,10 @@
         </section>
       </div>
     </div>
-    <script src="src/api.js?v=3"></script>
-    <script src="src/builtins.js?v=3"></script>
-    <script src="src/logistik.js?v=3"></script>
-    <script src="src/runner.js?v=3"></script>
-    <script src="src/app.js?v=3"></script>
+    <script src="src/api.js?v=4"></script>
+    <script src="src/builtins.js?v=4"></script>
+    <script src="src/logistik.js?v=4"></script>
+    <script src="src/runner.js?v=4"></script>
+    <script src="src/app.js?v=4"></script>
   </body>
 </html>

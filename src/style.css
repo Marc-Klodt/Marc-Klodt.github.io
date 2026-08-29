@@ -64,7 +64,7 @@ button {
 }
 
 .sidenav {
-  width: 228px;
+  width: 260px;
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -171,10 +171,15 @@ button {
   flex-direction: column;
 }
 
+.program-stage .workspace-toolbar {
+  background: #ece5d8;
+  padding: 10px 14px;
+}
+
 .program-stage iframe {
   flex: 1;
   width: 100%;
-  min-height: calc(100vh - 210px);
+  min-height: calc(100vh - 270px);
   border: 0;
   background: #fff;
 }
