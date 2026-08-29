@@ -1,0 +1,82 @@
+.ad-slot-content.panel-ad-slot-active {
+  border-style: solid;
+  overflow: hidden;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.ad-slot-content[data-ad-panel="1"].panel-ad-slot-active {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.98));
+}
+
+.ad-slot-content[data-ad-panel="2"].panel-ad-slot-active {
+  border-color: rgba(96, 165, 250, 0.35);
+  background: linear-gradient(135deg, rgba(15, 35, 58, 0.96), rgba(10, 20, 38, 0.98));
+}
+
+.ad-slot-content[data-ad-panel="3"].panel-ad-slot-active {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: linear-gradient(135deg, rgba(45, 22, 28, 0.96), rgba(20, 12, 18, 0.98));
+}
+
+.ad-slot-content[data-ad-panel="4"].panel-ad-slot-active {
+  border-color: rgba(167, 139, 250, 0.35);
+  background: linear-gradient(135deg, rgba(28, 20, 48, 0.96), rgba(14, 12, 32, 0.98));
+}
+
+.ad-slot-content.panel-ad-slot-active.panel-ad-visible {
+  opacity: 1;
+}
+
+.panel-ad-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  box-sizing: border-box;
+  padding: 0 0.2rem;
+  transform: scale(1.53);
+  transform-origin: center center;
+}
+
+.panel-ad-icon {
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.panel-ad-copy {
+  min-width: 0;
+  text-align: left;
+}
+
+.panel-ad-title {
+  margin: 0;
+  font-size: clamp(0.68rem, 1.5vw, 0.82rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.ad-slot-content[data-ad-panel="1"] .panel-ad-title { color: #fde68a; }
+.ad-slot-content[data-ad-panel="2"] .panel-ad-title { color: #bfdbfe; }
+.ad-slot-content[data-ad-panel="3"] .panel-ad-title { color: #fecaca; }
+.ad-slot-content[data-ad-panel="4"] .panel-ad-title { color: #ddd6fe; }
+
+.panel-ad-slogan {
+  margin: 0.12rem 0 0;
+  font-size: clamp(0.6rem, 1.3vw, 0.72rem);
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.25;
+  opacity: 0.92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-slot-content.panel-ad-slot-active {
+    transition: none;
+  }
+}

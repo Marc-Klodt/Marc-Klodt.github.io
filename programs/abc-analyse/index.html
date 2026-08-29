@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ABC-Analyse</title>
+  <link rel="icon" type="image/png" href="abc-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Bestands- und Umsatzklassifikation</p>
+      <h1>ABC-Analyse</h1>
+    </div>
+    <div class="topbar-actions">
+      <label class="btn ghost">
+        CSV laden
+        <input id="csv-input" type="file" accept=".csv,.txt,.tsv" hidden />
+      </label>
+      <details class="export-menu" id="export-menu">
+        <summary class="btn ghost">Ergebnis exportieren</summary>
+        <div class="export-menu-list" role="menu">
+          <button type="button" id="btn-pdf-preview" role="menuitem">PDF-Vorschau</button>
+          <button type="button" id="btn-pdf-print" role="menuitem">Als PDF drucken</button>
+          <button type="button" id="btn-export-csv" role="menuitem">CSV-Datei</button>
+        </div>
+      </details>
+      <button id="btn-sample" class="btn" type="button">Beispieldaten</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="kpis" id="kpis"></section>
+
+    <section class="controls">
+      <label>
+        A-Grenze
+        <span class="control-value" id="a-label">80 %</span>
+        <input id="a-threshold" type="range" min="50" max="95" step="1" value="80" />
+      </label>
+      <label>
+        B-Grenze
+        <span class="control-value" id="b-label">95 %</span>
+        <input id="b-threshold" type="range" min="70" max="99" step="1" value="95" />
+      </label>
+      <p class="hint">
+        Artikel werden nach Jahresverbrauchswert (Menge × Stückpreis) absteigend sortiert.
+        Klasse A bis zur A-Grenze, Klasse B bis zur B-Grenze, der Rest ist C.
+      </p>
+    </section>
+
+    <section class="charts">
+      <figure class="chart-panel">
+        <figcaption>
+          <strong>Pareto-Diagramm</strong>
+          <span>X: Rang (Nummer) · Balken: Jahresverbrauchswert in € · Linie: kumuliert in %</span>
+        </figcaption>
+        <div id="pareto-chart" class="chart-host"></div>
+      </figure>
+      <figure class="chart-panel">
+        <figcaption>
+          <strong>Klassenverteilung</strong>
+          <span>Kreis: Wertanteil · Balken: Wertanteil (farbig) gegen Artikelanteil (grau)</span>
+        </figcaption>
+        <div id="class-chart" class="chart-host"></div>
+      </figure>
+    </section>
+
+    <section class="table-section">
+      <div class="table-head">
+        <div>
+          <h2>Artikelstamm</h2>
+          <p>Werte direkt bearbeiten. Neue Zeilen unten anfügen oder aus Excel einfügen.</p>
+        </div>
+        <div class="table-actions">
+          <button id="btn-add" class="btn ghost" type="button">Artikel hinzufügen</button>
+          <button id="btn-clear" class="btn ghost" type="button">Leeren</button>
+        </div>
+      </div>
+      <textarea
+        id="paste-area"
+        rows="3"
+        placeholder="Aus Excel einfügen: Artikel, Menge, Stückpreis (Tab oder Semikolon)"
+      ></textarea>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rang</th>
+              <th>Klasse</th>
+              <th>Artikel</th>
+              <th class="num">Menge</th>
+              <th class="num">Stückpreis</th>
+              <th class="num">Jahreswert</th>
+              <th class="num">Anteil</th>
+              <th class="num">Kumuliert</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="item-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+
+  <div id="pdf-overlay" class="pdf-overlay" aria-hidden="true">
+    <div class="pdf-toolbar">
+      <p>DIN A4 · Im Druckdialog <strong>Als PDF speichern</strong> oder <strong>Microsoft Print to PDF</strong> wählen.</p>
+      <div class="pdf-toolbar-actions">
+        <button id="pdf-print" class="btn" type="button">Als PDF drucken</button>
+        <button id="pdf-close" class="btn ghost" type="button">Vorschau schließen</button>
+      </div>
+    </div>
+    <div id="pdf-stage" class="pdf-stage"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

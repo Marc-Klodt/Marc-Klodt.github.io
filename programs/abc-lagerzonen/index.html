@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ABC-Lagerzonen · Kragarmregale</title>
+  <link rel="icon" type="image/png" href="assets/lagerzonen-icon.png?v=3" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-icon" src="assets/lagerzonen-icon.png?v=3" alt="" width="48" height="48" />
+      <div>
+      <p class="eyebrow">Einrichtungsprogramm</p>
+      <h1>ABC-Lagerzonen</h1>
+      <p class="sub">6 Kragarmregale · beidseitig · 6,00 m × 8,00 m · 5 Ebenen</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <label class="file-btn">
+        CSV laden
+        <input id="csv-input" type="file" accept=".csv,text/csv" />
+      </label>
+      <button type="button" id="btn-sample" class="btn ghost">Beispieldaten</button>
+      <button type="button" id="btn-setup" class="btn primary">Zonen einrichten</button>
+      <button type="button" id="btn-export" class="btn ghost">CSV exportieren</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="side">
+      <div class="abc-only">
+      <section class="panel">
+        <h2>Zonenlogik</h2>
+        <p class="note">
+          Im Lager gilt: <strong>C = höchste Zugriffshäufigkeit</strong>,
+          <strong>A = niedrigste</strong>. Das ist bewusst anders als bei der
+          klassischen Wert-ABC-Analyse (dort ist A der umsatzstärkste Artikel).
+        </p>
+        <ul class="zone-key">
+          <li><span class="swatch z-c"></span>C Schnelldreher · nah am Warenausgang, untere Ebenen</li>
+          <li><span class="swatch z-b"></span>B Mittelläufer · mittlere Ebenen und Gänge</li>
+          <li><span class="swatch z-a"></span>A Langsamdreher · obere Ebenen, hintere Regale</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Pareto-Schwellen</h2>
+        <label class="slider">
+          <span>C bis <em id="lbl-c">80</em> % der Entnahmen</span>
+          <input id="thr-c" type="range" min="50" max="90" value="80" />
+        </label>
+        <label class="slider">
+          <span>B bis <em id="lbl-b">95</em> % der Entnahmen</span>
+          <input id="thr-b" type="range" min="85" max="99" value="95" />
+        </label>
+        <p class="hint">CSV: Artikelnummer;Bezeichnung;Entnahmen — Semikolon oder Komma. Beispiel liegt unter data/beispiel-artikel.csv.</p>
+      </section>
+
+      <section class="panel kpis" id="kpis">
+        <h2>Analyse</h2>
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="pareto" id="pareto"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Regalgeometrie</h2>
+        <dl class="spec">
+          <div><dt>Regale</dt><dd>6 Stück, beidseitig</dd></div>
+          <div><dt>Länge / Höhe</dt><dd>6,00 m / 8,00 m</dd></div>
+          <div><dt>Ebenen</dt><dd>5 × 1,60 m Abstand</dd></div>
+          <div><dt>Armtiefe</dt><dd>1,20 m je Seite</dd></div>
+          <div><dt>Fächer</dt><dd>3 × 2,00 m je Seite</dd></div>
+          <div><dt>Stellplätze</dt><dd>180</dd></div>
+        </dl>
+      </section>
+      </div>
+
+      <div class="designer-only">
+        <section class="panel">
+          <h2>Raummaße</h2>
+          <p class="note">Raummaße in Meter. Objekte und Raster bleiben in Zentimeter.</p>
+          <div class="cm-grid">
+            <label class="cm-field">Breite<input id="room-w" type="number" min="3" max="200" step="0.1" value="24"><span>m</span></label>
+            <label class="cm-field">Tiefe<input id="room-d" type="number" min="3" max="200" step="0.1" value="18"><span>m</span></label>
+            <label class="cm-field">Höhe<input id="room-h" type="number" min="2" max="20" step="0.1" value="8"><span>m</span></label>
+            <label class="cm-field">Raster
+              <select id="room-grid">
+                <option value="5">5 cm</option>
+                <option value="10" selected>10 cm</option>
+                <option value="20">20 cm</option>
+                <option value="50">50 cm</option>
+                <option value="100">100 cm</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Auswahlmenü</h2>
+          <p class="hint">Objekt auf den Grundriss ziehen oder anklicken und dann auf die Fläche klicken.</p>
+          <div id="palette" class="palette"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Objektmaße</h2>
+          <div id="obj-fields" class="obj-fields">
+            <label class="cm-field wide">Bezeichnung<input id="obj-name" type="text" value="kein Objekt"></label>
+            <label class="cm-field">Länge<input id="obj-w" type="number" min="0" max="5000" step="1" value="0"><span>cm</span></label>
+            <label class="cm-field">Breite<input id="obj-d" type="number" min="0" max="5000" step="1" value="0"><span>cm</span></label>
+            <label class="cm-field">Höhe<input id="obj-h" type="number" min="0" max="2000" step="1" value="0"><span>cm</span></label>
+            <label class="cm-field">Drehung
+              <select id="obj-rot">
+                <option value="0">0°</option>
+                <option value="90">90°</option>
+                <option value="180">180°</option>
+                <option value="270">270°</option>
+              </select>
+            </label>
+            <label class="cm-field" id="wrap-levels">Ebenen<input id="obj-levels" type="number" min="0" max="12" step="1" value="0"></label>
+            <div class="obj-actions">
+              <button type="button" id="obj-rotate" class="btn ghost" disabled>90° drehen</button>
+              <button type="button" id="obj-dup" class="btn ghost" disabled>Duplizieren</button>
+              <button type="button" id="obj-del" class="btn ghost" disabled>Löschen</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Lager</h2>
+          <div class="obj-actions">
+            <button type="button" id="btn-reset-view-side" class="btn ghost">Ansicht zentrieren</button>
+            <button type="button" id="layout-clear" class="btn ghost">Lager leeren</button>
+          </div>
+          <p class="hint">Layout wird automatisch im Browser gespeichert.</p>
+        </section>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-bar">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab on" data-view="iso">Isometrie</button>
+          <button type="button" class="tab" data-view="plan">Grundriss</button>
+          <button type="button" class="tab" data-view="cut">Regalschnitt</button>
+          <button type="button" class="tab" data-view="custom">Eigenes Lager</button>
+        </div>
+        <div class="rack-nav" id="rack-nav"></div>
+        <button type="button" id="btn-reset-view" class="btn ghost">Ansicht zentrieren</button>
+        <button type="button" id="btn-nav-view" class="btn ghost" aria-pressed="false">Bewegen / Zoom</button>
+        <p class="stage-hint" id="stage-hint">Regal anklicken für Schnitt und Belegung.</p>
+      </div>
+      <div class="canvas-wrap abc-only" id="canvas-wrap"></div>
+      <div class="canvas-wrap designer-only custom-stage" id="custom-wrap">
+        <div class="custom-floor-host" id="custom-floor-host">
+          <svg id="custom-svg" xmlns="http://www.w3.org/2000/svg" aria-label="Grundriss Eigenes Lager"></svg>
+        </div>
+      </div>
+      <div class="detail" id="detail"></div>
+    </section>
+  </main>
+
+  <section class="table-wrap abc-only">
+    <div class="table-bar">
+      <h2>Artikelliste</h2>
+      <button type="button" id="btn-clear-articles" class="btn ghost">Liste leeren</button>
+      <input id="search" type="search" placeholder="Suchen…" />
+      <div class="filters">
+        <button type="button" class="chip on" data-zone="all">Alle</button>
+        <button type="button" class="chip" data-zone="C">C</button>
+        <button type="button" class="chip" data-zone="B">B</button>
+        <button type="button" class="chip" data-zone="A">A</button>
+      </div>
+    </div>
+    <form id="article-form" class="article-form" autocomplete="off">
+      <label class="cm-field">Artikelnummer
+        <input id="new-artikel" type="text" required maxlength="40" placeholder="z. B. ART-0001">
+      </label>
+      <label class="cm-field">Bezeichnung
+        <input id="new-bezeichnung" type="text" required maxlength="120" placeholder="Artikelbezeichnung">
+      </label>
+      <label class="cm-field">Entnahmen
+        <input id="new-entnahmen" type="number" min="0" step="1" value="0">
+      </label>
+      <button type="submit" id="btn-insert-article" class="btn primary">In Liste einfügen</button>
+      <p id="article-form-hint" class="hint"></p>
+    </form>
+      <div class="filters">
+        <button type="button" class="chip on" data-zone="all">Alle</button>
+        <button type="button" class="chip" data-zone="C">C</button>
+        <button type="button" class="chip" data-zone="B">B</button>
+        <button type="button" class="chip" data-zone="A">A</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Artikel</th>
+            <th>Bezeichnung</th>
+            <th class="num">Entnahmen</th>
+            <th class="num">Anteil</th>
+            <th>Zone</th>
+            <th>Lagerplatz</th>
+            <th class="num">Höhe</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script src="js/designer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

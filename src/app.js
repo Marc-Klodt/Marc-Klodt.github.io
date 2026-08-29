@@ -39,14 +39,19 @@ function render() {
 
 function renderGuest() {
   root.innerHTML = `
-    <div class="shell">
-      <header class="topbar">
-        <div class="brand">
-          <span class="mark"><span class="logo" aria-hidden="true"><span class="logo-l">L</span><span class="logo-t">T</span></span> GoGiLock</span>
-          <h1>Logistik-Tools</h1>
-          <p>Programme für alle, die angemeldet sind. Registriere dich mit einer gültigen E-Mail-Adresse. Dein Login wird automatisch erzeugt und per E-Mail zugestellt.</p>
-        </div>
-      </header>
+    <div class="app-layout">
+      ${renderSidenav()}
+      <div class="app-main">
+        <header class="topbar">
+          <div class="brand">
+            <span class="mark">GoGiLock</span>
+            <h1>${ui.workspace ? escapeHtml(ui.workspace.name) : "Logistik-Tools"}</h1>
+            <p>${ui.workspace
+              ? escapeHtml(ui.workspace.description || "")
+              : "Zweidimensionaler Ladeplan, ABC-Analyse und ABC-Lagerzonen – Programme in der Leiste links öffnen."}</p>
+          </div>
+        </header>
+        ${ui.workspace ? renderWorkspace() : `
       <div class="auth-grid">
         <section class="paper-card">
           <div class="code-tabs auth-tabs">
@@ -101,11 +106,14 @@ function renderGuest() {
           </ul>
         </aside>
       </div>
+        `}
+      </div>
     </div>
   `;
 }
 
 function bindGuest() {
+  bindNav();
   document.querySelectorAll("[data-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
       ui.tab = btn.dataset.tab;
@@ -154,57 +162,91 @@ function bindGuest() {
   });
 }
 
+function navPrograms() {
+  return typeof logistikPrograms !== "undefined" ? logistikPrograms : [];
+}
+
+function navIcon(program) {
+  if (program && program.iconUrl) {
+    return `<img src="${escapeHtml(program.iconUrl)}" alt="" width="34" height="34" />`;
+  }
+  return escapeHtml((program && program.icon) || "");
+}
+
+function renderSidenav() {
+  const items = navPrograms();
+  const activeId = ui.workspace ? ui.workspace.id : "";
+  return `
+    <nav class="sidenav" aria-label="Programme">
+      <button type="button" class="sidenav-home ${activeId ? "" : "active"}" id="nav-home">
+        <span class="logo" aria-hidden="true"><span class="logo-l">L</span><span class="logo-t">T</span></span>
+        <span>Logistik-Tools</span>
+      </button>
+      <p class="sidenav-label">Programme</p>
+      <ul class="sidenav-list">
+        ${items
+          .map(
+            (p) => `
+          <li>
+            <button type="button" class="sidenav-item ${activeId === p.id ? "active" : ""}" data-open="${p.id}">
+              <span class="sidenav-icon" style="--accent:${escapeHtml(p.accent || "#c45c32")}">${navIcon(p)}</span>
+              <span>${escapeHtml(p.name)}</span>
+            </button>
+          </li>`
+          )
+          .join("")}
+      </ul>
+    </nav>`;
+}
+
 function renderApp() {
-  const programs = filteredPrograms();
   root.innerHTML = `
-    <div class="shell">
-      <header class="topbar">
-        <div class="brand">
-          <span class="mark"><span class="logo" aria-hidden="true"><span class="logo-l">L</span><span class="logo-t">T</span></span> GoGiLock</span>
-          <h1>Logistik-Tools</h1>
-          <p>${ui.publicMode
-            ? "Notizen, Rechner und Stoppuhr – direkt im Browser."
-            : "Nach der Anmeldung stehen dir alle von der Administration bereitgestellten Programme zur Verfügung."}</p>
-        </div>
-        <div class="top-actions">
-          <label class="search">
-            <span aria-hidden="true">⌕</span>
-            <input id="search" type="search" placeholder="Suchen …" value="${escapeHtml(ui.query)}" />
-          </label>
-          ${ui.publicMode ? "" : `
-          <div class="account">
-            <button class="btn ghost" type="button" id="account-btn">${escapeHtml(ui.me.email)}</button>
+    <div class="app-layout">
+      ${renderSidenav()}
+      <div class="app-main">
+        <header class="topbar">
+          <div class="brand">
+            <span class="mark">GoGiLock</span>
+            <h1>${ui.workspace ? escapeHtml(ui.workspace.name) : "Logistik-Tools"}</h1>
+            <p>${ui.workspace
+              ? escapeHtml(ui.workspace.description || "")
+              : "Zweidimensionaler Ladeplan, ABC-Analyse und ABC-Lagerzonen – Programme in der Leiste links öffnen."}</p>
           </div>
-          <button class="btn ghost" type="button" id="logout-btn">Abmelden</button>
-          `}
-        </div>
-      </header>
-      ${ui.error ? `<p class="banner bad">${escapeHtml(ui.error)}</p>` : ""}
-      ${ui.notice ? `<p class="banner good">${escapeHtml(ui.notice)}</p>` : ""}
-      <section class="board" aria-label="Programme">
-        ${
-          ui.programs.length === 0
-            ? `<div class="empty">Noch keine Programme. Die Administration kann sie hinterlegen.</div>`
-            : programs
-                .map(
-                  (p) => `
-            <article class="card" tabindex="0" data-open="${p.id}" style="--accent:${escapeHtml(p.accent || "#c45c32")}">
-              <div class="tab"></div>
-              <div class="card-body">
-                <div class="icon">${escapeHtml(p.icon || "⌘")}</div>
-                <h2>${escapeHtml(p.name)}</h2>
-                <p>${escapeHtml(p.description || "")}</p>
-                <div class="meta"><span>${typeLabel(p.type)}</span><span>${ui.publicMode ? "Öffentlich" : "Freigegeben"}</span></div>
-              </div>
-            </article>`
-                )
-                .join("")
-        }
-      </section>
+          <div class="top-actions">
+            ${ui.publicMode ? "" : `
+            <div class="account">
+              <button class="btn ghost" type="button" id="account-btn">${escapeHtml(ui.me.email)}</button>
+            </div>
+            <button class="btn ghost" type="button" id="logout-btn">Abmelden</button>
+            `}
+          </div>
+        </header>
+        ${ui.error ? `<p class="banner bad">${escapeHtml(ui.error)}</p>` : ""}
+        ${ui.notice ? `<p class="banner good">${escapeHtml(ui.notice)}</p>` : ""}
+        ${ui.workspace ? renderWorkspace() : renderOverview()}
+      </div>
     </div>
     ${ui.accountOpen && !ui.publicMode ? renderPasswordPanel() : ""}
-    ${renderWorkspace()}
   `;
+}
+
+function renderOverview() {
+  return `
+    <section class="overview" aria-label="Programme">
+      ${navPrograms()
+        .map(
+          (p) => `
+        <article class="card" tabindex="0" data-open="${p.id}" style="--accent:${escapeHtml(p.accent || "#c45c32")}">
+          <div class="tab"></div>
+          <div class="card-body">
+            <div class="icon">${navIcon(p)}</div>
+            <h2>${escapeHtml(p.name)}</h2>
+            <p>${escapeHtml(p.description || "")}</p>
+          </div>
+        </article>`
+        )
+        .join("")}
+    </section>`;
 }
 
 function renderPasswordPanel() {
@@ -241,33 +283,35 @@ function renderWorkspace() {
   if (p.type === "code") {
     body = `<iframe title="${escapeHtml(p.name)}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin"></iframe>`;
   } else if (p.type === "embed" && p.url) {
-    body = `<iframe title="${escapeHtml(p.name)}" src="${escapeHtml(p.url)}" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>`;
+    body = `<iframe title="${escapeHtml(p.name)}" src="${escapeHtml(p.url)}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups allow-downloads"></iframe>`;
   } else {
     body = `<div class="link-fallback"><div><h2>${escapeHtml(p.name)}</h2><p><a href="${escapeHtml(p.url || "#")}" target="_blank" rel="noopener">${escapeHtml(p.url || "")}</a></p></div></div>`;
   }
-  return `
-    <div class="overlay" id="workspace-overlay">
-      <div class="panel wide workspace" role="dialog">
-        <div class="workspace-toolbar">
-          <h2>${escapeHtml(p.icon || "")} ${escapeHtml(p.name)}</h2>
-          <button class="btn" type="button" id="close-workspace">Schließen</button>
-        </div>
-        ${body}
-      </div>
-    </div>`;
+  return `<section class="program-stage workspace" aria-label="${escapeHtml(p.name)}">${body}</section>`;
+}
+
+function bindNav() {
+  document.getElementById("nav-home")?.addEventListener("click", () => {
+    ui.workspace = null;
+    render();
+  });
+  root.querySelectorAll("[data-open]").forEach((el) => {
+    el.addEventListener("click", () => openProgram(el.dataset.open));
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openProgram(el.dataset.open);
+      }
+    });
+  });
+  const frame = document.querySelector(".workspace iframe");
+  if (frame && ui.workspace && ui.workspace.type === "code") {
+    frame.srcdoc = buildSrcdoc(ui.workspace);
+  }
 }
 
 function bindApp() {
-  document.getElementById("search")?.addEventListener("input", (e) => {
-    ui.query = e.target.value;
-    const active = document.activeElement === e.target;
-    render();
-    if (active) {
-      const next = document.getElementById("search");
-      next.focus();
-      next.setSelectionRange(ui.query.length, ui.query.length);
-    }
-  });
+  bindNav();
   document.getElementById("account-btn")?.addEventListener("click", () => {
     ui.accountOpen = true;
     render();
@@ -303,29 +347,6 @@ function bindApp() {
       render();
     }
   });
-  root.querySelectorAll("[data-open]").forEach((el) => {
-    el.addEventListener("click", () => openProgram(el.dataset.open));
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openProgram(el.dataset.open);
-      }
-    });
-  });
-  document.getElementById("close-workspace")?.addEventListener("click", () => {
-    ui.workspace = null;
-    render();
-  });
-  document.getElementById("workspace-overlay")?.addEventListener("click", (e) => {
-    if (e.target.id === "workspace-overlay") {
-      ui.workspace = null;
-      render();
-    }
-  });
-  const frame = document.querySelector(".workspace iframe");
-  if (frame && ui.workspace && ui.workspace.type === "code") {
-    frame.srcdoc = buildSrcdoc(ui.workspace);
-  }
 }
 
 function closePw() {
@@ -334,22 +355,8 @@ function closePw() {
   render();
 }
 
-function filteredPrograms() {
-  const q = ui.query.trim().toLowerCase();
-  if (!q) return ui.programs;
-  return ui.programs.filter((p) =>
-    `${p.name} ${p.description} ${p.type}`.toLowerCase().includes(q)
-  );
-}
-
-function typeLabel(type) {
-  if (type === "link") return "Link";
-  if (type === "embed") return "Einbettung";
-  return "Programm";
-}
-
 function openProgram(id) {
-  const p = ui.programs.find((item) => item.id === id);
+  const p = navPrograms().find((item) => item.id === id) || ui.programs.find((item) => item.id === id);
   if (!p) return;
   if (p.type === "link" && p.url) {
     window.open(p.url, "_blank", "noopener");
@@ -360,24 +367,15 @@ function openProgram(id) {
 }
 
 function publicPrograms() {
-  if (typeof builtins === "undefined") return [];
-  return builtins.map((p) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    icon: p.icon,
-    accent: p.accent,
-    type: p.type || "code",
-    url: p.url || "",
-    html: p.html || "",
-    css: p.css || "",
-    js: p.js || "",
-  }));
+  return navPrograms();
 }
 
 async function hasApi() {
   try {
-    const res = await fetch("api/health", { credentials: "include" });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 1500);
+    const res = await fetch("api/health", { credentials: "include", signal: ctrl.signal });
+    clearTimeout(timer);
     return res.ok;
   } catch (_) {
     return false;

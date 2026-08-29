@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ladeplan">
+  <defs>
+    <radialGradient id="bg-black" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+    <linearGradient id="rim-blue" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#bfdbfe"/>
+      <stop offset="25%" stop-color="#60a5fa"/>
+      <stop offset="55%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <linearGradient id="rim-bevel-hi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#dbeafe" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rim-bevel-lo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3a8a" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#172554"/>
+    </linearGradient>
+    <linearGradient id="van-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+    <linearGradient id="van-roof" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#eab308"/>
+    </linearGradient>
+    <linearGradient id="van-cab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="van-glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bae6fd"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <radialGradient id="wheel" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </radialGradient>
+    <mask id="rim-ring">
+      <rect width="64" height="64" fill="black"/>
+      <circle cx="32" cy="32" r="30" fill="white"/>
+      <circle cx="32" cy="32" r="28" fill="black"/>
+    </mask>
+    <mask id="rim-highlight-mask">
+      <rect width="64" height="64" fill="black"/>
+      <circle cx="32" cy="32" r="30" fill="white"/>
+      <circle cx="32" cy="32" r="28" fill="black"/>
+      <rect x="0" y="0" width="64" height="34" fill="white"/>
+    </mask>
+    <mask id="rim-shadow-mask">
+      <rect width="64" height="64" fill="black"/>
+      <circle cx="32" cy="32" r="30" fill="white"/>
+      <circle cx="32" cy="32" r="28" fill="black"/>
+      <rect x="0" y="30" width="64" height="34" fill="white"/>
+    </mask>
+    <filter id="rim-glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.2" flood-color="#93c5fd" flood-opacity="0.95"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#3b82f6" flood-opacity="0.55"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="0.6" flood-color="#1e3a8a" flood-opacity="0.35"/>
+    </filter>
+    <filter id="van-shadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="0.8" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#rim-glow)" mask="url(#rim-ring)">
+    <circle cx="32" cy="32" r="30" fill="url(#rim-blue)"/>
+    <circle cx="32" cy="32" r="30" fill="url(#rim-bevel-hi)" mask="url(#rim-highlight-mask)" opacity="0.85"/>
+    <circle cx="32" cy="32" r="30" fill="url(#rim-bevel-lo)" mask="url(#rim-shadow-mask)" opacity="0.7"/>
+  </g>
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#eff6ff" stroke-width="0.9" opacity="0.95"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#2563eb" stroke-width="0.6" opacity="0.55"/>
+
+  <circle cx="32" cy="32" r="28" fill="url(#bg-black)"/>
+  <ellipse cx="28" cy="18" rx="5" ry="3" fill="#fff" opacity="0.06"/>
+
+  <g filter="url(#van-shadow)">
+    <path d="M12 36h38.5a1.8 1.8 0 0 0 1.8-1.8V28.5a2 2 0 0 0-2-2H12Z" fill="url(#van-body)"/>
+    <path d="M12 26.5h12.5a2.2 2.2 0 0 1 2.2 2.2V34.2H12Z" fill="url(#van-cab)"/>
+    <path d="M13.2 28.2h8.8a1.2 1.2 0 0 1 1.2 1.2v3.6H13.2Z" fill="url(#van-glass)"/>
+    <path d="M13.5 28.5h2.2v3.2H13.5Z" fill="#fff" opacity="0.45"/>
+    <path d="M24.5 26.5h24.8a1.5 1.5 0 0 1 1.5 1.5v1.8H24.5Z" fill="url(#van-roof)"/>
+    <rect x="26" y="29.8" width="20" height="4.8" rx="0.6" fill="#fde047"/>
+    <path d="M26 30.2h18.5" stroke="#a16207" stroke-width="0.5" opacity="0.55"/>
+    <rect x="48.5" y="30.5" width="1.2" height="3.2" rx="0.3" fill="#ef4444"/>
+    <ellipse cx="20" cy="37.8" rx="2.8" ry="1.7" fill="url(#wheel)"/>
+    <ellipse cx="20" cy="37.2" rx="1.6" ry="0.9" fill="#94a3b8" opacity="0.5"/>
+    <ellipse cx="42" cy="37.8" rx="2.8" ry="1.7" fill="url(#wheel)"/>
+    <ellipse cx="42" cy="37.2" rx="1.6" ry="0.9" fill="#94a3b8" opacity="0.5"/>
+    <rect x="11.2" y="35.2" width="1.4" height="1.8" rx="0.3" fill="#64748b"/>
+  </g>
+</svg>

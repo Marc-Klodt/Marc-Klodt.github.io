@@ -1,0 +1,29 @@
+const logistikPrograms = [
+  {
+    id: "logistik-ladeplan",
+    name: "Zweidimensionaler Ladeplan",
+    description: "Zweidimensionaler Beladungsplaner für LKW jeglicher Art.",
+    iconUrl: "programs/ladeplan/icons/ladeplan.svg",
+    accent: "#3b82f6",
+    type: "embed",
+    url: "programs/ladeplan/index.html",
+  },
+  {
+    id: "logistik-abc",
+    name: "ABC-Analyse",
+    description: "Bestands- und Umsatzklassifikation nach Jahresverbrauchswert.",
+    iconUrl: "programs/abc-analyse/abc-icon.png",
+    accent: "#e07a4a",
+    type: "embed",
+    url: "programs/abc-analyse/index.html",
+  },
+  {
+    id: "logistik-lagerzonen",
+    name: "ABC-Lagerzonen",
+    description: "Einrichtungsprogramm für ABC-Lagerzonen und Kragarmregale.",
+    iconUrl: "programs/abc-lagerzonen/assets/lagerzonen-icon.png",
+    accent: "#3d8b4a",
+    type: "embed",
+    url: "programs/abc-lagerzonen/index.html",
+  },
+];

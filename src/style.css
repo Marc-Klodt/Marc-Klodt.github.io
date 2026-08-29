@@ -57,6 +57,122 @@ button {
   padding: 28px 22px 80px;
 }
 
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+.sidenav {
+  width: 228px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: #12100e;
+  border-right: 1px solid var(--line);
+  padding: 18px 12px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidenav-home,
+.sidenav-item {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  border-radius: 12px;
+  padding: 10px 10px;
+}
+
+.sidenav-home {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.sidenav-home.active,
+.sidenav-item.active,
+.sidenav-home:hover,
+.sidenav-item:hover {
+  background: rgba(243, 238, 228, 0.08);
+}
+
+.sidenav-item.active {
+  box-shadow: inset 3px 0 0 var(--copper);
+}
+
+.sidenav-label {
+  margin: 8px 10px 4px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  color: #9b9288;
+}
+
+.sidenav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.sidenav-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: transparent;
+  overflow: hidden;
+}
+
+.sidenav-icon img,
+.icon img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 28px 40px;
+}
+
+.overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+.program-stage {
+  min-height: calc(100vh - 210px);
+  background: var(--paper);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.program-stage iframe {
+  flex: 1;
+  width: 100%;
+  min-height: calc(100vh - 210px);
+  border: 0;
+  background: #fff;
+}
+
 .topbar {
   display: flex;
   align-items: flex-end;
@@ -236,9 +352,14 @@ button {
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
-  background: #ece5d8;
-  font-size: 1.25rem;
+  border-radius: 50%;
+  background: transparent;
+  overflow: hidden;
+}
+
+.icon img {
+  width: 42px;
+  height: 42px;
 }
 
 .card h2 {
@@ -581,6 +702,43 @@ textarea {
 
   .remove {
     opacity: 1;
+  }
+
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidenav {
+    width: 100%;
+    height: auto;
+    position: sticky;
+    z-index: 5;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .sidenav-home {
+    width: auto;
+    margin: 0;
+  }
+
+  .sidenav-label {
+    display: none;
+  }
+
+  .sidenav-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .sidenav-item {
+    width: auto;
+  }
+
+  .app-main {
+    padding: 20px 16px 32px;
   }
 }
 

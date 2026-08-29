@@ -1279,6 +1279,7 @@ namespace GoGiLock
             if (ext == ".svg") return "image/svg+xml";
             if (ext == ".png") return "image/png";
             if (ext == ".ico") return "image/x-icon";
+            if (ext == ".csv") return "text/csv; charset=utf-8";
             return "application/octet-stream";
         }
 
