@@ -83,20 +83,25 @@ button {
   display: none;
 }
 
-.app-layout.program-open .sidenav {
+.app-layout.program-open .sidenav,
+html.program-open .sidenav {
   position: fixed;
   left: 0;
   top: 0;
   transform: translateX(-100%);
   box-shadow: none;
+  pointer-events: none;
 }
 
-.app-layout.program-open.nav-open .sidenav {
+.app-layout.program-open.nav-open .sidenav,
+html.program-open.nav-open .sidenav {
   transform: none;
   box-shadow: 12px 0 28px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
 }
 
-.app-layout.program-open .nav-edge {
+.app-layout.program-open .nav-edge,
+html.program-open .nav-edge {
   display: block;
   position: fixed;
   left: 0;

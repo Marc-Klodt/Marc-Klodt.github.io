@@ -25,15 +25,18 @@ function setNotice(msg) {
 
 function render() {
   if (ui.view === "loading") {
+    setProgramChrome(!!ui.workspace);
     return;
   }
   if (!ui.me) {
     renderGuest();
     bindGuest();
+    setProgramChrome(!!ui.workspace);
     return;
   }
   renderApp();
   bindApp();
+  setProgramChrome(!!ui.workspace);
 }
 
 function renderGuest() {
@@ -272,14 +275,14 @@ function renderWorkspace() {
   if (p.type === "code") {
     body = `<iframe title="${escapeHtml(p.name)}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin"></iframe>`;
   } else if (p.type === "embed" && p.url) {
-    body = `<iframe title="${escapeHtml(p.name)}" src="${escapeHtml(p.url)}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups allow-downloads"></iframe>`;
+    body = `<iframe title="${escapeHtml(p.name)}" src="${escapeHtml(p.url)}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups allow-downloads allow-top-navigation-by-user-activation"></iframe>`;
   } else {
     body = `<div class="link-fallback"><div><h2>${escapeHtml(p.name)}</h2><p><a href="${escapeHtml(p.url || "#")}" target="_blank" rel="noopener">${escapeHtml(p.url || "")}</a></p></div></div>`;
   }
   return `
     <section class="program-stage workspace" aria-label="${escapeHtml(p.name)}">
       <div class="workspace-toolbar">
-        <button class="btn" type="button" id="back-home">Zurück zur Hauptseite</button>
+        <a class="btn" id="back-home" href="./">Zurück zur Hauptseite</a>
       </div>
       ${body}
     </section>`;
@@ -294,26 +297,42 @@ function markNav(id) {
 
 function setProgramChrome(open) {
   const layout = document.querySelector(".app-layout");
-  if (!layout) return;
-  layout.classList.toggle("program-open", open);
-  if (!open) layout.classList.remove("nav-open");
+  document.documentElement.classList.toggle("program-open", open);
+  if (layout) {
+    layout.classList.toggle("program-open", open);
+    layout.classList.remove("nav-open");
+  }
+  document.documentElement.classList.remove("nav-open");
 }
 
 function showHiddenNav() {
   const layout = document.querySelector(".app-layout");
-  if (layout && layout.classList.contains("program-open")) {
-    layout.classList.add("nav-open");
-  }
+  if (!layout || !layout.classList.contains("program-open")) return;
+  layout.classList.add("nav-open");
+  document.documentElement.classList.add("nav-open");
 }
 
 function hideHiddenNav() {
   const layout = document.querySelector(".app-layout");
-  if (layout && layout.classList.contains("program-open")) {
-    layout.classList.remove("nav-open");
-  }
+  if (!layout || !layout.classList.contains("program-open")) return;
+  layout.classList.remove("nav-open");
+  document.documentElement.classList.remove("nav-open");
 }
 
 function bindStaticNav() {
+  if (!document.documentElement.dataset.homeBound) {
+    document.documentElement.dataset.homeBound = "1";
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("#back-home")) {
+        e.preventDefault();
+        goHome();
+      }
+    });
+    window.addEventListener("message", (e) => {
+      if (e.origin !== location.origin) return;
+      if (e.data && e.data.type === "gogilock-home") goHome();
+    });
+  }
   const nav = document.getElementById("sidenav");
   const edge = document.getElementById("nav-edge");
   if (!nav || nav.dataset.bound) return;
@@ -341,8 +360,10 @@ function bindStaticNav() {
   });
 }
 
-function goHome() {
+function goHome(event) {
+  if (event) event.preventDefault();
   ui.workspace = null;
+  ui.view = ui.me ? "app" : "guest";
   markNav("");
   setProgramChrome(false);
   if (location.hash) {
@@ -441,8 +462,13 @@ function openProgram(id) {
     history.replaceState(null, "", "#" + hash);
   }
   markNav(id);
+  ui.view = ui.me ? "app" : ui.view === "loading" ? "app" : ui.view;
+  if (!ui.me) {
+    ui.me = { email: "" };
+    ui.publicMode = true;
+    ui.view = "app";
+  }
   render();
-  setProgramChrome(true);
 }
 
 function publicPrograms() {
