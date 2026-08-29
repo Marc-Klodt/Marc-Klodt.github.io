@@ -75,6 +75,51 @@ button {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  z-index: 40;
+  transition: transform 0.22s ease;
+}
+
+.nav-edge {
+  display: none;
+}
+
+.app-layout.program-open .sidenav {
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform: translateX(-100%);
+  box-shadow: none;
+}
+
+.app-layout.program-open.nav-open .sidenav {
+  transform: none;
+  box-shadow: 12px 0 28px rgba(0, 0, 0, 0.4);
+}
+
+.app-layout.program-open .nav-edge {
+  display: block;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 100vh;
+  z-index: 35;
+  cursor: pointer;
+}
+
+.app-layout.program-open .nav-edge::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--copper);
+  opacity: 0.7;
+}
+
+.app-layout.program-open .app-main {
+  padding: 16px 16px 20px;
 }
 
 .sidenav-home,
@@ -727,6 +772,16 @@ textarea {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+  }
+
+  .app-layout.program-open .sidenav {
+    width: 260px;
+    height: 100vh;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    position: fixed;
+    z-index: 40;
   }
 
   .sidenav-home {

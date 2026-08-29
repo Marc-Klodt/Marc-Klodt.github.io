@@ -292,8 +292,30 @@ function markNav(id) {
   document.getElementById("nav-home")?.classList.toggle("active", !id);
 }
 
+function setProgramChrome(open) {
+  const layout = document.querySelector(".app-layout");
+  if (!layout) return;
+  layout.classList.toggle("program-open", open);
+  if (!open) layout.classList.remove("nav-open");
+}
+
+function showHiddenNav() {
+  const layout = document.querySelector(".app-layout");
+  if (layout && layout.classList.contains("program-open")) {
+    layout.classList.add("nav-open");
+  }
+}
+
+function hideHiddenNav() {
+  const layout = document.querySelector(".app-layout");
+  if (layout && layout.classList.contains("program-open")) {
+    layout.classList.remove("nav-open");
+  }
+}
+
 function bindStaticNav() {
   const nav = document.getElementById("sidenav");
+  const edge = document.getElementById("nav-edge");
   if (!nav || nav.dataset.bound) return;
   nav.dataset.bound = "1";
   nav.addEventListener("click", (e) => {
@@ -308,11 +330,21 @@ function bindStaticNav() {
     e.preventDefault();
     openProgram(item.dataset.open);
   });
+  edge?.addEventListener("mouseenter", showHiddenNav);
+  edge?.addEventListener("click", showHiddenNav);
+  nav.addEventListener("mouseleave", hideHiddenNav);
+  document.addEventListener("mousemove", (e) => {
+    const layout = document.querySelector(".app-layout");
+    if (!layout || !layout.classList.contains("program-open")) return;
+    if (e.clientX <= 22) showHiddenNav();
+    else if (e.clientX > 270 && !nav.contains(e.target)) hideHiddenNav();
+  });
 }
 
 function goHome() {
   ui.workspace = null;
   markNav("");
+  setProgramChrome(false);
   if (location.hash) {
     history.replaceState(null, "", location.pathname + location.search);
   }
@@ -410,6 +442,7 @@ function openProgram(id) {
   }
   markNav(id);
   render();
+  setProgramChrome(true);
 }
 
 function publicPrograms() {
