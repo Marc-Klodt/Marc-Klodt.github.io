@@ -90,6 +90,12 @@ button {
   text-align: left;
   border-radius: 12px;
   padding: 10px 10px;
+  text-decoration: none;
+}
+
+.card {
+  text-decoration: none;
+  color: inherit;
 }
 
 .sidenav-home {

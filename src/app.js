@@ -25,7 +25,6 @@ function setNotice(msg) {
 
 function render() {
   if (ui.view === "loading") {
-    root.innerHTML = `<div class="shell"><p class="footer-note">Logistik-Tools wird geladen …</p></div>`;
     return;
   }
   if (!ui.me) {
@@ -39,9 +38,6 @@ function render() {
 
 function renderGuest() {
   root.innerHTML = `
-    <div class="app-layout">
-      ${renderSidenav()}
-      <div class="app-main">
         <header class="topbar">
           <div class="brand">
             <span class="mark">GoGiLock</span>
@@ -107,8 +103,6 @@ function renderGuest() {
         </aside>
       </div>
         `}
-      </div>
-    </div>
   `;
 }
 
@@ -201,9 +195,6 @@ function renderSidenav() {
 
 function renderApp() {
   root.innerHTML = `
-    <div class="app-layout">
-      ${renderSidenav()}
-      <div class="app-main">
         <header class="topbar">
           <div class="brand">
             <span class="mark">GoGiLock</span>
@@ -224,8 +215,6 @@ function renderApp() {
         ${ui.error ? `<p class="banner bad">${escapeHtml(ui.error)}</p>` : ""}
         ${ui.notice ? `<p class="banner good">${escapeHtml(ui.notice)}</p>` : ""}
         ${ui.workspace ? renderWorkspace() : renderOverview()}
-      </div>
-    </div>
     ${ui.accountOpen && !ui.publicMode ? renderPasswordPanel() : ""}
   `;
 }
@@ -290,13 +279,39 @@ function renderWorkspace() {
   return `<section class="program-stage workspace" aria-label="${escapeHtml(p.name)}">${body}</section>`;
 }
 
-function bindNav() {
-  document.getElementById("nav-home")?.addEventListener("click", () => {
-    ui.workspace = null;
-    render();
+function markNav(id) {
+  document.querySelectorAll("#sidenav .sidenav-item").forEach((el) => {
+    el.classList.toggle("active", el.dataset.open === id);
   });
+  document.getElementById("nav-home")?.classList.toggle("active", !id);
+}
+
+function bindStaticNav() {
+  const nav = document.getElementById("sidenav");
+  if (!nav || nav.dataset.bound) return;
+  nav.dataset.bound = "1";
+  nav.addEventListener("click", (e) => {
+    const home = e.target.closest("#nav-home");
+    if (home) {
+      e.preventDefault();
+      ui.workspace = null;
+      markNav("");
+      render();
+      return;
+    }
+    const item = e.target.closest("[data-open]");
+    if (!item) return;
+    e.preventDefault();
+    openProgram(item.dataset.open);
+  });
+}
+
+function bindNav() {
   root.querySelectorAll("[data-open]").forEach((el) => {
-    el.addEventListener("click", () => openProgram(el.dataset.open));
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      openProgram(el.dataset.open);
+    });
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -363,6 +378,7 @@ function openProgram(id) {
     return;
   }
   ui.workspace = p;
+  markNav(id);
   render();
 }
 
@@ -382,15 +398,22 @@ async function hasApi() {
   }
 }
 
-async function boot() {
-  ui.view = "loading";
+function isStaticHost() {
+  return /\.github\.io$/i.test(location.hostname);
+}
+
+function enterPublic() {
+  ui.publicMode = true;
+  ui.me = { email: "" };
+  ui.programs = publicPrograms();
+  ui.view = "app";
   render();
-  if (!(await hasApi())) {
-    ui.publicMode = true;
-    ui.me = { email: "" };
-    ui.programs = publicPrograms();
-    ui.view = "app";
-    render();
+}
+
+async function boot() {
+  bindStaticNav();
+  if (isStaticHost() || !(await hasApi())) {
+    enterPublic();
     return;
   }
   try {
@@ -401,8 +424,8 @@ async function boot() {
     ui.view = "app";
     ui.error = "";
   } catch (_) {
-    ui.me = null;
-    ui.view = "guest";
+    enterPublic();
+    return;
   }
   render();
 }
