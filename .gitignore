@@ -1,0 +1,6 @@
+data
+server/*.exe
+server/*.pdb
+*.log
+.DS_Store
+Thumbs.db
