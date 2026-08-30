@@ -14,3 +14,9 @@
 .ggl-backbar a:hover {
   color: #d4a574;
 }
+
+@media print {
+  .ggl-backbar {
+    display: none !important;
+  }
+}

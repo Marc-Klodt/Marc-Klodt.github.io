@@ -495,12 +495,14 @@ const HASH_BY_ID = {
   "logistik-ladeplan": "ladeplan",
   "logistik-abc": "abc-analyse",
   "logistik-lagerzonen": "abc-lagerzonen",
+  "logistik-europalette": "europalettenschein",
 };
 
 const ID_BY_HASH = {
   ladeplan: "logistik-ladeplan",
   "abc-analyse": "logistik-abc",
   "abc-lagerzonen": "logistik-lagerzonen",
+  europalettenschein: "logistik-europalette",
 };
 
 function openProgram(id) {

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Europalettenschein</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../back.css" />
+</head>
+<body data-version="euro">
+  <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
+  <div class="app">
+    <header class="toolbar no-print">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="36" height="36">
+            <rect width="40" height="40" rx="8" fill="#1a2744" />
+            <rect x="6" y="10" width="28" height="20" rx="1.5" fill="none" stroke="#e8c36a" stroke-width="1.8" />
+            <path d="M6 20h28M15 10v20M25 10v20" stroke="#e8c36a" stroke-width="1.4" />
+          </svg>
+        </span>
+        <div>
+          <h1>Europalettentausch</h1>
+          <p>Schein erstellen, ausfüllen und drucken</p>
+        </div>
+      </div>
+
+      <div class="version-switch" role="group" aria-label="Scheinart">
+        <button type="button" id="btn-euro" class="is-active" aria-pressed="true">Euro</button>
+        <button type="button" id="btn-neutral" aria-pressed="false">Neutral</button>
+      </div>
+
+      <div class="toolbar-actions">
+        <button type="button" id="btn-new" class="btn ghost">Neuer Schein</button>
+        <button type="button" id="btn-print" class="btn primary">Drucken</button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <article class="sheet" id="sheet" data-vorgang="tausch">
+        <header class="sheet-head">
+          <div class="sheet-brand">
+            <div class="epal-badge only-euro" aria-hidden="true">
+              <span class="epal-oval">EUR</span>
+              <span class="epal-sub">EPAL</span>
+            </div>
+            <div class="neutral-badge only-neutral" aria-hidden="true">N</div>
+            <div class="sheet-titles">
+              <p class="sheet-kicker">Nachweis über Ladehilfsmittel</p>
+              <h2 class="only-euro">Europalettenschein</h2>
+              <h2 class="only-neutral">Neutraler Schein</h2>
+              <p class="sheet-sub only-euro">Ausschließlich Europaletten (EPAL · 800 × 1.200 mm)</p>
+              <p class="sheet-sub only-neutral">Ausgabe, Empfang oder Tausch beliebiger Gegenstände</p>
+            </div>
+          </div>
+          <div class="meta-grid">
+            <label>Datum
+              <input type="date" id="feld-datum" />
+            </label>
+            <label>Ort
+              <input type="text" id="feld-ort" placeholder="Ort der Übergabe" autocomplete="off" />
+            </label>
+            <label>Beleg-Nr.
+              <input type="text" id="feld-beleg" placeholder="wird erzeugt" autocomplete="off" />
+            </label>
+            <label>Lieferschein / Tour
+              <input type="text" id="feld-lieferschein" placeholder="optional" autocomplete="off" />
+            </label>
+            <label>Kennzeichen
+              <input type="text" id="feld-kennzeichen" placeholder="optional" autocomplete="off" />
+            </label>
+          </div>
+        </header>
+
+        <section class="parties">
+          <div class="party">
+            <h3>Übergeben von</h3>
+            <label>Firma
+              <input type="text" id="ueber-firma" autocomplete="organization" />
+            </label>
+            <label>Name
+              <input type="text" id="ueber-name" autocomplete="name" />
+            </label>
+            <label>Adresse
+              <textarea id="ueber-adresse" rows="1" autocomplete="street-address"></textarea>
+            </label>
+          </div>
+          <div class="party">
+            <h3>Angenommen von</h3>
+            <label>Firma
+              <input type="text" id="an-firma" autocomplete="organization" />
+            </label>
+            <label>Name
+              <input type="text" id="an-name" autocomplete="name" />
+            </label>
+            <label>Adresse
+              <textarea id="an-adresse" rows="1" autocomplete="street-address"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="vorgang" aria-labelledby="vorgang-title">
+          <h3 id="vorgang-title">Vorgang</h3>
+          <div class="vorgang-options" role="radiogroup" aria-labelledby="vorgang-title">
+            <label class="choice">
+              <input type="radio" name="vorgang" value="tausch" checked />
+              <span>Tausch</span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="vorgang" value="empfangen" />
+              <span>Empfangen</span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="vorgang" value="ausgegeben" />
+              <span>Ausgegeben</span>
+            </label>
+          </div>
+        </section>
+
+        <section class="positions">
+          <div class="section-head">
+            <h3 class="only-euro">Europaletten</h3>
+            <h3 class="only-neutral">Positionen</h3>
+            <button type="button" class="link-btn no-print" id="btn-add-row">+ Zeile hinzufügen</button>
+          </div>
+          <div class="table-wrap">
+            <table class="pos-table" id="pos-table">
+              <thead>
+                <tr>
+                  <th class="col-pos">Pos.</th>
+                  <th class="col-art only-euro">Ladehilfsmittel</th>
+                  <th class="col-bez only-neutral">Individuelle Bezeichnung</th>
+                  <th class="col-abgegeben">Ausgegeben</th>
+                  <th class="col-empfangen">Empfangen</th>
+                  <th class="col-zustand">Zustand</th>
+                  <th class="col-diff">Diff.</th>
+                  <th class="col-del no-print"></th>
+                </tr>
+              </thead>
+              <tbody id="pos-body"></tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="2" class="sum-label">Summe</th>
+                  <td class="col-abgegeben"><output id="sum-abgegeben">0</output></td>
+                  <td class="col-empfangen"><output id="sum-empfangen">0</output></td>
+                  <td class="col-zustand"></td>
+                  <td class="col-diff"><output id="sum-diff">0</output></td>
+                  <td class="col-del no-print"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p class="hint only-euro">Menge je Zustand erfassen. Art und Maß sind fest auf Europaletten (EPAL) gesetzt.</p>
+          <p class="hint only-neutral">Bezeichnung frei eintragen, z.&nbsp;B. Gitterbox, Aufsatzrahmen, Werkzeug oder sonstige Gegenstände.</p>
+        </section>
+
+        <div class="mid-row">
+          <section class="agreement">
+            <h3>Tauschvereinbarung</h3>
+            <div class="agreement-options">
+              <label class="choice compact">
+                <input type="radio" name="vereinbarung" value="zug-um-zug" checked />
+                <span>Tausch Zug um Zug bei Übergabe</span>
+              </label>
+              <label class="choice compact">
+                <input type="radio" name="vereinbarung" value="schuld" />
+                <span>Palettenschuld – Rückgabe wird nachgeholt</span>
+              </label>
+              <label class="choice compact">
+                <input type="radio" name="vereinbarung" value="kein" />
+                <span>Kein Tausch vereinbart</span>
+              </label>
+            </div>
+            <label class="schuld-date">Rückgabetermin
+              <input type="date" id="feld-rueckgabe" />
+            </label>
+          </section>
+
+          <section class="notes">
+            <label>Bemerkungen
+              <textarea id="feld-bemerkungen" rows="4" placeholder="Beschädigungen, offene Salden, Vorbehalte …"></textarea>
+            </label>
+          </section>
+        </div>
+
+        <section class="signs">
+          <div class="sign-block">
+            <h3>Übergeber / Fahrer</h3>
+            <label>Name in Druckschrift
+              <input type="text" id="sign-ueber-name" autocomplete="name" />
+            </label>
+            <div class="pad-wrap">
+              <span class="pad-label">Unterschrift</span>
+              <canvas id="sign-ueber" class="sign-pad" width="420" height="110" aria-label="Unterschrift Übergeber"></canvas>
+              <button type="button" class="link-btn no-print" data-clear-sign="sign-ueber">Unterschrift löschen</button>
+            </div>
+            <label>Datum
+              <input type="date" id="sign-ueber-datum" />
+            </label>
+          </div>
+          <div class="sign-block">
+            <h3>Empfänger / Lager</h3>
+            <label>Name in Druckschrift
+              <input type="text" id="sign-an-name" autocomplete="name" />
+            </label>
+            <div class="pad-wrap">
+              <span class="pad-label">Unterschrift</span>
+              <canvas id="sign-an" class="sign-pad" width="420" height="110" aria-label="Unterschrift Empfänger"></canvas>
+              <button type="button" class="link-btn no-print" data-clear-sign="sign-an">Unterschrift löschen</button>
+            </div>
+            <label>Datum
+              <input type="date" id="sign-an-datum" />
+            </label>
+          </div>
+        </section>
+
+        <footer class="sheet-foot">
+          <p>Zustandsklassen: <strong>A</strong> neuwertig · <strong>B</strong> gebraucht, tauschfähig · <strong>C</strong> reparaturbedürftig</p>
+          <p class="only-euro">Dieser Schein gilt ausschließlich für Europaletten nach EPAL / UIC 435-2.</p>
+          <p class="only-neutral">Neutraler Schein: Gegenstände in der Spalte „Individuelle Bezeichnung“ eindeutig beschreiben.</p>
+        </footer>
+      </article>
+    </main>
+  </div>
+
+  <template id="pos-row-template">
+    <tr class="pos-row">
+      <td class="col-pos"></td>
+      <td class="col-art only-euro">
+        <span class="fixed-art">Europalette (EPAL)</span>
+        <span class="fixed-art-sub">800 × 1.200 mm</span>
+      </td>
+      <td class="col-bez only-neutral">
+        <input type="text" class="feld-bezeichnung" placeholder="Gegenstand / Artikel beschreiben" autocomplete="off" />
+      </td>
+      <td class="col-abgegeben">
+        <input type="number" class="feld-abgegeben" min="0" step="1" inputmode="numeric" />
+      </td>
+      <td class="col-empfangen">
+        <input type="number" class="feld-empfangen" min="0" step="1" inputmode="numeric" />
+      </td>
+      <td class="col-zustand">
+        <select class="feld-zustand">
+          <option value="">—</option>
+          <option value="A">A neuwertig</option>
+          <option value="B">B tauschfähig</option>
+          <option value="C">C reparaturbedürftig</option>
+        </select>
+      </td>
+      <td class="col-diff"><output class="feld-diff">0</output></td>
+      <td class="col-del no-print">
+        <button type="button" class="icon-del" title="Zeile entfernen" aria-label="Zeile entfernen">×</button>
+      </td>
+    </tr>
+  </template>
+
+  <script src="app.js"></script>
+  <script src="../back.js"></script>
+</body>
+</html>

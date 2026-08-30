@@ -26,4 +26,13 @@ const logistikPrograms = [
     type: "embed",
     url: "programs/abc-lagerzonen/index.html",
   },
+  {
+    id: "logistik-europalette",
+    name: "Europalettenschein",
+    description: "Schein für Europaletten und Neutralen Schein erstellen, ausfüllen und drucken.",
+    iconUrl: "programs/europalettenschein/icon.svg",
+    accent: "#e8c36a",
+    type: "embed",
+    url: "programs/europalettenschein/index.html",
+  },
 ];
