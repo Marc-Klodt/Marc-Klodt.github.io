@@ -273,12 +273,19 @@ html.program-open .nav-edge {
   transform: translateX(-50%) translateY(8px);
   width: min(260px, 74vw);
   font-size: 0.95rem;
-  color: #fff;
+  color: #ffffff;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
   z-index: 25;
+}
+
+.info-cloud-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   filter:
     drop-shadow(1px 0 0 var(--neon-a))
     drop-shadow(-1px 0 0 var(--neon-b))
@@ -288,19 +295,30 @@ html.program-open .nav-edge {
     drop-shadow(0 0 14px var(--neon-b));
 }
 
+.info-cloud-plate {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  border-radius: 42px;
+}
+
 .info-cloud-body {
   position: relative;
   z-index: 1;
-  background: #000;
-  color: #fff;
+  background: transparent;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   padding: 20px 22px 16px;
   border-radius: 42px;
   text-align: center;
+  filter: none;
 }
 
 .info-cloud strong,
 .info-cloud p {
-  color: #fff;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  opacity: 1;
 }
 
 .info-cloud strong {
@@ -323,7 +341,8 @@ html.program-open .nav-edge {
   border-radius: 50%;
 }
 
-.cloud-v1 .info-cloud-body {
+.cloud-v1 .info-cloud-body,
+.cloud-v1 .info-cloud-plate {
   border-radius: 48px 40px 44px 36px;
 }
 
@@ -331,7 +350,8 @@ html.program-open .nav-edge {
 .cloud-v1 .puff-b { width: 38px; height: 38px; left: 36%; top: -16px; }
 .cloud-v1 .puff-c { width: 48px; height: 48px; right: 8%; top: -20px; }
 
-.cloud-v2 .info-cloud-body {
+.cloud-v2 .info-cloud-body,
+.cloud-v2 .info-cloud-plate {
   border-radius: 34px 52px 30px 46px;
 }
 
@@ -339,7 +359,8 @@ html.program-open .nav-edge {
 .cloud-v2 .puff-b { width: 58px; height: 58px; right: 12%; top: -28px; }
 .cloud-v2 .puff-c { width: 34px; height: 34px; left: -8px; bottom: 10px; }
 
-.cloud-v3 .info-cloud-body {
+.cloud-v3 .info-cloud-body,
+.cloud-v3 .info-cloud-plate {
   border-radius: 50px 32px 48px 28px;
 }
 
@@ -347,7 +368,8 @@ html.program-open .nav-edge {
 .cloud-v3 .puff-b { width: 36px; height: 36px; right: 22%; top: -14px; }
 .cloud-v3 .puff-c { width: 44px; height: 44px; right: -6px; bottom: 8px; }
 
-.cloud-v4 .info-cloud-body {
+.cloud-v4 .info-cloud-body,
+.cloud-v4 .info-cloud-plate {
   border-radius: 38px 46px 34px 50px;
 }
 

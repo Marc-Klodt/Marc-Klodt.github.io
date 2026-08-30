@@ -60,9 +60,12 @@ function renderInfoCloud(id, extraClass, title, text) {
   const variant = 1 + Math.floor(Math.random() * 4);
   return `
     <div class="info-cloud ${extraClass} cloud-v${variant}" id="${id}" role="tooltip" style="--neon-a:${neonA};--neon-b:${neonB}">
-      <span class="cloud-puff puff-a" aria-hidden="true"></span>
-      <span class="cloud-puff puff-b" aria-hidden="true"></span>
-      <span class="cloud-puff puff-c" aria-hidden="true"></span>
+      <div class="info-cloud-glow" aria-hidden="true">
+        <span class="cloud-puff puff-a"></span>
+        <span class="cloud-puff puff-b"></span>
+        <span class="cloud-puff puff-c"></span>
+        <div class="info-cloud-plate"></div>
+      </div>
       <div class="info-cloud-body">
         ${title ? `<strong>${title}</strong>` : ""}
         <p>${text}</p>
