@@ -222,20 +222,29 @@ function renderApp() {
   `;
 }
 
+function homeIcon(program) {
+  if (program && program.iconUrl) {
+    return `<img src="${escapeHtml(program.iconUrl)}" alt="" width="102" height="102" />`;
+  }
+  return escapeHtml((program && program.icon) || "");
+}
+
 function renderOverview() {
   return `
-    <section class="overview" aria-label="Programme">
+    <section class="home-icons" aria-label="Programme im Überblick">
       ${navPrograms()
         .map(
           (p) => `
-        <article class="card" tabindex="0" data-open="${p.id}" style="--accent:${escapeHtml(p.accent || "#c45c32")}">
-          <div class="tab"></div>
-          <div class="card-body">
-            <div class="icon">${navIcon(p)}</div>
-            <h2>${escapeHtml(p.name)}</h2>
+        <div class="home-icon">
+          <button type="button" class="home-icon-btn" aria-describedby="tip-${escapeHtml(p.id)}">
+            <span class="home-icon-glyph">${homeIcon(p)}</span>
+            <span class="visually-hidden">${escapeHtml(p.name)}</span>
+          </button>
+          <div class="home-icon-tip" id="tip-${escapeHtml(p.id)}" role="tooltip">
+            <strong>${escapeHtml(p.name)}</strong>
             <p>${escapeHtml(p.description || "")}</p>
           </div>
-        </article>`
+        </div>`
         )
         .join("")}
     </section>`;
@@ -372,8 +381,29 @@ function goHome(event) {
   render();
 }
 
+function bindHomeIcons() {
+  root.querySelectorAll(".home-icon-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const wrap = btn.closest(".home-icon");
+      const open = wrap.classList.contains("is-open");
+      root.querySelectorAll(".home-icon").forEach((el) => el.classList.remove("is-open"));
+      if (!open) wrap.classList.add("is-open");
+    });
+  });
+  if (!document.documentElement.dataset.homeTipsBound) {
+    document.documentElement.dataset.homeTipsBound = "1";
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".home-icon")) {
+        document.querySelectorAll(".home-icon.is-open").forEach((el) => el.classList.remove("is-open"));
+      }
+    });
+  }
+}
+
 function bindNav() {
   document.getElementById("back-home")?.addEventListener("click", goHome);
+  bindHomeIcons();
   root.querySelectorAll("[data-open]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
