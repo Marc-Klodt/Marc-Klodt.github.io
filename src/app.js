@@ -444,14 +444,19 @@ function bindStaticNav() {
   });
 }
 
+function homePath() {
+  return location.pathname + location.search;
+}
+
 function goHome(event) {
   if (event) event.preventDefault();
   ui.workspace = null;
+  ui.helpOpen = false;
   ui.view = ui.me ? "app" : "guest";
   markNav("");
   setProgramChrome(false);
   if (location.hash) {
-    history.replaceState(null, "", location.pathname + location.search);
+    history.replaceState({ ggl: "home" }, "", homePath());
   }
   render();
 }
@@ -570,7 +575,20 @@ const ID_BY_HASH = {
   europalettenschein: "logistik-europalette",
 };
 
-function openProgram(id) {
+function setProgramUrl(id) {
+  const hash = HASH_BY_ID[id];
+  if (!hash) return;
+  const next = "#" + hash;
+  if (location.hash === next) return;
+  const state = { ggl: "program", id };
+  if (location.hash) {
+    history.replaceState(state, "", next);
+  } else {
+    history.pushState(state, "", next);
+  }
+}
+
+function openProgram(id, fromHistory) {
   const p = navPrograms().find((item) => item.id === id) || ui.programs.find((item) => item.id === id);
   if (!p) return;
   if (p.type === "link" && p.url) {
@@ -578,10 +596,7 @@ function openProgram(id) {
     return;
   }
   ui.workspace = p;
-  const hash = HASH_BY_ID[id];
-  if (hash && location.hash !== "#" + hash) {
-    history.replaceState(null, "", "#" + hash);
-  }
+  if (!fromHistory) setProgramUrl(id);
   markNav(id);
   ui.view = ui.me ? "app" : ui.view === "loading" ? "app" : ui.view;
   if (!ui.me) {
@@ -620,17 +635,26 @@ function enterPublic() {
   render();
 }
 
-function openFromHash() {
+function openFromHash(fromHistory) {
   const key = (location.hash || "").replace(/^#/, "");
   const id = ID_BY_HASH[key];
-  if (id) openProgram(id);
+  if (id) openProgram(id, fromHistory);
+}
+
+function openLandingProgram() {
+  const key = (location.hash || "").replace(/^#/, "");
+  const id = ID_BY_HASH[key];
+  if (!id) return;
+  history.replaceState({ ggl: "home" }, "", homePath());
+  history.pushState({ ggl: "program", id }, "", "#" + key);
+  openProgram(id, true);
 }
 
 async function boot() {
   bindStaticNav();
   if (isStaticHost() || !(await hasApi())) {
     enterPublic();
-    openFromHash();
+    openLandingProgram();
     return;
   }
   try {
@@ -642,11 +666,11 @@ async function boot() {
     ui.error = "";
   } catch (_) {
     enterPublic();
-    openFromHash();
+    openLandingProgram();
     return;
   }
   render();
-  openFromHash();
+  openLandingProgram();
 }
 
 document.addEventListener("keydown", (e) => {
@@ -661,12 +685,10 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-window.addEventListener("hashchange", () => {
-  if (!location.hash) {
+window.addEventListener("popstate", () => {
+  if (ui.workspace || location.hash) {
     goHome();
-    return;
   }
-  openFromHash();
 });
 
 boot();
