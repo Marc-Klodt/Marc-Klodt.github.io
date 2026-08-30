@@ -30,7 +30,7 @@ const logistikPrograms = [
     id: "logistik-europalette",
     name: "Europalettenschein",
     description: "Schein für Europaletten und Neutralen Schein erstellen, ausfüllen und drucken.",
-    iconUrl: "programs/europalettenschein/icon.svg",
+    iconUrl: "programs/europalettenschein/europalettentausch-icon.png",
     accent: "#e8c36a",
     type: "embed",
     url: "programs/europalettenschein/index.html",
