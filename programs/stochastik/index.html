@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stochastische Bedarfsanalyse</title>
+  <link rel="icon" type="image/svg+xml" href="img/icon.svg" />
+  <link rel="icon" type="image/png" href="assets/stochastik-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../back.css" />
+</head>
+<body>
+  <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Bestandsplanung unter Unsicherheit</p>
+      <h1>Stochastische Bedarfsanalyse</h1>
+    </div>
+    <div class="topbar-actions">
+      <label class="btn ghost">
+        CSV laden
+        <input id="csv-input" type="file" accept=".csv,.txt,.tsv" hidden />
+      </label>
+      <details class="export-menu" id="export-menu">
+        <summary class="btn ghost">Ergebnis exportieren</summary>
+        <div class="export-menu-list" role="menu">
+          <button type="button" id="btn-pdf-preview" role="menuitem">PDF-Vorschau</button>
+          <button type="button" id="btn-pdf-print" role="menuitem">Als PDF drucken</button>
+          <button type="button" id="btn-export-csv" role="menuitem">CSV-Datei</button>
+        </div>
+      </details>
+      <button id="btn-sample" class="btn" type="button">Beispieldaten</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="kpis" id="kpis"></section>
+
+    <section class="controls">
+      <label>
+        Auswertung in
+        <select id="period-unit">
+          <option value="Tag">Tage</option>
+          <option value="Woche" selected>Wochen</option>
+          <option value="Monat">Monate</option>
+          <option value="Jahr">Jahre</option>
+        </select>
+      </label>
+      <label>
+        Servicegrad α
+        <span class="control-value" id="sl-label">95 %</span>
+        <input id="service-level" type="range" min="80" max="99.5" step="0.5" value="95" />
+      </label>
+      <label>
+        Bestellpolitik
+        <select id="policy">
+          <option value="continuous">Kontinuierlich (s, Q)</option>
+          <option value="periodic">Periodisch (R, S)</option>
+        </select>
+      </label>
+      <label id="review-wrap" hidden>
+        Überprüfungsintervall R
+        <input id="review-interval" type="number" min="1" step="1" value="4" />
+      </label>
+      <label>
+        Verteilung
+        <select id="dist-mode">
+          <option value="auto">Automatisch je Artikel</option>
+          <option value="normal">Normalverteilung</option>
+          <option value="poisson">Poisson</option>
+          <option value="empirical">Empirisch (Perzentil)</option>
+        </select>
+      </label>
+      <label>
+        X-Grenze (CV)
+        <span class="control-value" id="x-label">0,50</span>
+        <input id="x-threshold" type="range" min="0.20" max="0.80" step="0.05" value="0.50" />
+      </label>
+      <label>
+        Y-Grenze (CV)
+        <span class="control-value" id="y-label">1,00</span>
+        <input id="y-threshold" type="range" min="0.60" max="2.00" step="0.05" value="1.00" />
+      </label>
+      <p class="hint">
+        Bedarf je Artikel getrennt für Tag, Woche, Monat und Jahr eintragen.
+        Die Auswertung rechnet auf die gewählte Einheit um; σ kommt aus der Streuung dieser Angaben.
+        SS = z(α) · σ · √(WBZ [+ R]), Meldebestand s = μ · WBZ + SS.
+      </p>
+    </section>
+
+    <section class="workspace">
+      <section class="table-section">
+        <div class="table-head">
+          <div>
+            <h2>Artikelstamm</h2>
+            <p>Weiße Rahmenfelder mit der Markierung „eingeben“ sind beschreibbar. Bedarf mit Komma oder Punkt, leere Horizonte zählen nicht.</p>
+          </div>
+          <div class="table-actions">
+            <button id="btn-add" class="btn ghost" type="button">Artikel hinzufügen</button>
+            <button id="btn-clear" class="btn ghost" type="button">Leeren</button>
+          </div>
+        </div>
+        <textarea
+          id="paste-area"
+          rows="3"
+          placeholder="Aus Excel einfügen: Artikelnr, Artikel, Tag, Woche, Monat, Jahr, WBZ, Preis"
+        ></textarea>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>XYZ</th>
+                <th class="entry">Artikelnr</th>
+                <th class="entry">Artikel</th>
+                <th class="num entry">Tag</th>
+                <th class="num entry">Woche</th>
+                <th class="num entry">Monat</th>
+                <th class="num entry">Jahr</th>
+                <th class="num entry" id="lt-head">WBZ</th>
+                <th class="num">μ</th>
+                <th class="num">SS</th>
+                <th class="num">s / S</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="item-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </section>
+
+    <section class="charts charts-wide">
+      <figure class="chart-panel">
+        <figcaption>
+          <strong>Bedarf und Sicherheitsbestand</strong>
+          <span id="result-chart-caption">Balken je Artikel in der Auswerteinheit · Bedarf μ, Sicherheitsbestand, Meldebestand s</span>
+        </figcaption>
+        <div id="result-chart" class="chart-host chart-host-tall"></div>
+      </figure>
+    </section>
+
+    <aside class="detail" id="detail">
+      <p class="empty">Artikel in der Tabelle wählen.</p>
+    </aside>
+
+    <section class="charts">
+      <figure class="chart-panel">
+        <figcaption>
+          <strong>XYZ-Verteilung</strong>
+          <span>Kreis: Artikelanteil · Balken: Artikel- gegen Sicherheitsbestandsanteil</span>
+        </figcaption>
+        <div id="xyz-chart" class="chart-host"></div>
+      </figure>
+      <figure class="chart-panel">
+        <figcaption>
+          <strong>Bedarf nach Zeithorizont</strong>
+          <span>Ausgewählter Artikel · eingetragene Werte, umgerechnet auf die Auswerteinheit</span>
+        </figcaption>
+        <div id="horizon-chart" class="chart-host"></div>
+      </figure>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+
+  <div id="pdf-overlay" class="pdf-overlay" aria-hidden="true">
+    <div class="pdf-toolbar">
+      <p>DIN A4 · Im Druckdialog <strong>Als PDF speichern</strong> oder <strong>Microsoft Print to PDF</strong> wählen.</p>
+      <div class="pdf-toolbar-actions">
+        <button id="pdf-print" class="btn" type="button">Als PDF drucken</button>
+        <button id="pdf-close" class="btn ghost" type="button">Vorschau schließen</button>
+      </div>
+    </div>
+    <div id="pdf-stage" class="pdf-stage"></div>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="../back.js"></script>
+</body>
+</html>

@@ -568,6 +568,7 @@ const HASH_BY_ID = {
   "logistik-abc": "abc-analyse",
   "logistik-lagerzonen": "abc-lagerzonen",
   "logistik-europalette": "europalettenschein",
+  "logistik-stochastik": "stochastische-bedarfsanalyse",
 };
 
 const ID_BY_HASH = {
@@ -575,6 +576,7 @@ const ID_BY_HASH = {
   "abc-analyse": "logistik-abc",
   "abc-lagerzonen": "logistik-lagerzonen",
   europalettenschein: "logistik-europalette",
+  "stochastische-bedarfsanalyse": "logistik-stochastik",
 };
 
 function setProgramUrl(id) {

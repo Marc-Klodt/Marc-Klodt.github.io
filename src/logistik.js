@@ -35,4 +35,13 @@ const logistikPrograms = [
     type: "embed",
     url: "programs/europalettenschein/index.html",
   },
+  {
+    id: "logistik-stochastik",
+    name: "Stochastische Bedarfsanalyse",
+    description: "Bestandsplanung unter Unsicherheit mit Bedarf, Streuung und Servicegrad.",
+    iconUrl: "programs/stochastik/assets/stochastik-icon.png",
+    accent: "#22c55e",
+    type: "embed",
+    url: "programs/stochastik/index.html",
+  },
 ];
