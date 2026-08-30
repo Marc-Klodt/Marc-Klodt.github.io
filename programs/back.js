@@ -17,7 +17,4 @@
     history.replaceState({ ggl: "home" }, "", home);
     history.pushState({ ggl: "program" }, "", location.href);
   }
-  window.addEventListener("popstate", function () {
-    location.replace(home);
-  });
 })();

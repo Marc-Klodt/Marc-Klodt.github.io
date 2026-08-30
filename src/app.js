@@ -448,17 +448,22 @@ function homePath() {
   return location.pathname + location.search;
 }
 
-function goHome(event) {
-  if (event) event.preventDefault();
+function showHome() {
   ui.workspace = null;
   ui.helpOpen = false;
   ui.view = ui.me ? "app" : "guest";
   markNav("");
   setProgramChrome(false);
-  if (location.hash) {
-    history.replaceState({ ggl: "home" }, "", homePath());
-  }
   render();
+}
+
+function goHome(event) {
+  if (event) event.preventDefault();
+  if (location.hash) {
+    history.back();
+    return;
+  }
+  showHome();
 }
 
 function bindHomeIcons() {
@@ -686,9 +691,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("popstate", () => {
-  if (ui.workspace || location.hash) {
-    goHome();
+  if (!location.hash) {
+    showHome();
+    return;
   }
+  openFromHash(true);
 });
 
 boot();
