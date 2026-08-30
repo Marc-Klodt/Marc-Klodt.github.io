@@ -44,4 +44,13 @@ const logistikPrograms = [
     type: "embed",
     url: "programs/stochastik/index.html",
   },
+  {
+    id: "logistik-lagerplanung",
+    name: "Lagerplanung",
+    description: "Maßstabsgetreuer Grundriss für Blocklager, Paletten- und Kragarmregale.",
+    iconUrl: "programs/lagerplanung/icons/lagerplanung-icon.png",
+    accent: "#a855f7",
+    type: "embed",
+    url: "programs/lagerplanung/index.html",
+  },
 ];

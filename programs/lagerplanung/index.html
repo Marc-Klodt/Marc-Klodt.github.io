@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lagerplanung – maßstabsgetreuer Hallengrundriss</title>
+  <link rel="icon" href="icons/lagerplanung.svg?v=2" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../back.css">
+</head>
+<body>
+  <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <img src="icons/lagerplanung.svg?v=2" alt="" class="header-logo" width="44" height="44">
+        <div>
+          <h1>Lagerplanung</h1>
+          <p class="subtitle">Maßstabsgetreuer Grundriss für Blocklager, Paletten- und Kragarmregale</p>
+        </div>
+      </div>
+      <div id="header-stats" class="header-stats" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Grundriss</h2>
+        <p class="panel-note">Rechteck in Metern anlegen oder Linien frei ziehen. Beim Ziehen erscheint die aktuelle Länge in cm.</p>
+        <div class="input-row">
+          <label>Länge (m)
+            <input type="number" id="hall-length" min="1" max="500" step="0.01" value="40">
+          </label>
+          <label>Breite (m)
+            <input type="number" id="hall-width" min="1" max="500" step="0.01" value="25">
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Raumhöhe (m)
+            <input type="number" id="hall-height" min="2" max="30" step="0.1" value="8">
+          </label>
+          <label>Wandstärke (cm)
+            <input type="number" id="wall-thick" min="5" max="80" step="1" value="20">
+          </label>
+        </div>
+        <button type="button" id="btn-rect-hall" class="btn btn-primary">Rechteck-Halle anlegen</button>
+        <div class="btn-row" style="margin-top:0.5rem">
+          <button type="button" id="btn-draw-outline" class="btn">Linien ziehen</button>
+          <button type="button" id="btn-close-outline" class="btn">Umriss schließen</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Türen, Tore, Fenster</h2>
+        <p class="panel-note">Maße unabhängig definieren und an eine Wand klicken. Höhe gilt für die Aufrissansicht.</p>
+        <div class="preset-grid" id="opening-presets"></div>
+        <div class="input-row">
+          <label>Breite (cm)
+            <input type="number" id="open-w" min="30" max="2000" step="1" value="100">
+          </label>
+          <label>Höhe (cm)
+            <input type="number" id="open-h" min="40" max="1200" step="1" value="210">
+          </label>
+        </div>
+        <label>Brüstung / Schwelle (cm)
+          <input type="number" id="open-sill" min="0" max="400" step="1" value="0">
+        </label>
+        <div class="btn-row">
+          <button type="button" id="btn-place-door" class="btn" data-open="door">Tür setzen</button>
+          <button type="button" id="btn-place-gate" class="btn" data-open="gate">Tor setzen</button>
+          <button type="button" id="btn-place-window" class="btn" data-open="window">Fenster setzen</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Blocklager</h2>
+        <label>Bezeichnung
+          <input type="text" id="block-name" maxlength="40" value="Blocklager">
+        </label>
+        <div class="input-row">
+          <label>Länge (cm)
+            <input type="number" id="block-w" min="40" max="10000" step="1" value="480">
+          </label>
+          <label>Breite (cm)
+            <input type="number" id="block-d" min="40" max="10000" step="1" value="320">
+          </label>
+        </div>
+        <label>Stapelhöhe (cm)
+          <input type="number" id="block-h" min="40" max="2000" step="1" value="180">
+        </label>
+        <button type="button" id="btn-place-block" class="btn btn-primary">Blocklager platzieren</button>
+      </section>
+
+      <section class="panel">
+        <h2>Palettenregal</h2>
+        <div class="preset-grid" id="pallet-presets"></div>
+        <label>Bezeichnung
+          <input type="text" id="pallet-name" maxlength="40" value="Palettenregal">
+        </label>
+        <div class="input-row">
+          <label>Länge (cm)
+            <input type="number" id="pallet-w" min="80" max="8000" step="1" value="360">
+          </label>
+          <label>Tiefe (cm)
+            <input type="number" id="pallet-d" min="40" max="400" step="1" value="110">
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Höhe (cm)
+            <input type="number" id="pallet-h" min="150" max="2000" step="1" value="600">
+          </label>
+          <label>Felder
+            <input type="number" id="pallet-bays" min="1" max="40" step="1" value="3">
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Ebenen
+            <input type="number" id="pallet-levels" min="1" max="12" step="1" value="4">
+          </label>
+          <label>1. Träger (cm)
+            <input type="number" id="pallet-first" min="0" max="400" step="1" value="20">
+          </label>
+        </div>
+        <button type="button" id="btn-place-pallet" class="btn btn-primary">Palettenregal platzieren</button>
+      </section>
+
+      <section class="panel">
+        <h2>Kragarmregal</h2>
+        <div class="preset-grid" id="cantilever-presets"></div>
+        <label>Bezeichnung
+          <input type="text" id="cant-name" maxlength="40" value="Kragarmregal">
+        </label>
+        <div class="input-row">
+          <label>Länge (cm)
+            <input type="number" id="cant-w" min="100" max="8000" step="1" value="600">
+          </label>
+          <label>Armtiefe (cm)
+            <input type="number" id="cant-arm" min="40" max="300" step="1" value="120">
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Höhe (cm)
+            <input type="number" id="cant-h" min="150" max="2500" step="1" value="800">
+          </label>
+          <label>Ebenen
+            <input type="number" id="cant-levels" min="1" max="12" step="1" value="5">
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Ständer
+            <input type="number" id="cant-cols" min="2" max="30" step="1" value="4">
+          </label>
+          <label>Seiten
+            <select id="cant-sided">
+              <option value="double">beidseitig</option>
+              <option value="single">einseitig</option>
+            </select>
+          </label>
+        </div>
+        <button type="button" id="btn-place-cantilever" class="btn btn-primary">Kragarmregal platzieren</button>
+      </section>
+
+      <section class="panel">
+        <h2>Anzeige</h2>
+        <label class="checkbox-label">
+          <input type="checkbox" id="snap-grid" checked>
+          Am Raster ausrichten
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="show-grid" checked>
+          Raster anzeigen
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="show-dimensions" checked>
+          Maße anzeigen
+        </label>
+        <label>Raster
+          <select id="grid-size">
+            <option value="5">5 cm</option>
+            <option value="10" selected>10 cm</option>
+            <option value="20">20 cm</option>
+            <option value="50">50 cm</option>
+            <option value="100">100 cm</option>
+          </select>
+        </label>
+        <div class="btn-row">
+          <button type="button" id="btn-undo" class="btn" disabled>Rückgängig</button>
+          <button type="button" id="btn-fit" class="btn">Ansicht zentrieren</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Speichern</h2>
+        <div class="btn-row">
+          <button type="button" id="btn-save" class="btn btn-primary">Als JSON speichern</button>
+          <button type="button" id="btn-load" class="btn">Plan laden</button>
+        </div>
+        <input type="file" id="file-import" accept=".json" class="hidden">
+        <div class="btn-row" style="margin-top:0.5rem">
+          <button type="button" id="btn-example" class="btn">Beispielhalle</button>
+          <button type="button" id="btn-clear" class="btn">Alles löschen</button>
+        </div>
+        <p class="panel-note">Der Plan wird zusätzlich automatisch im Browser zwischengespeichert.</p>
+      </section>
+    </aside>
+
+    <main class="canvas-area">
+      <div class="chart-panels-row">
+        <aside class="usage-bar-panel" aria-label="Fläche belegt">
+          <h2 class="usage-bar-title">Fläche belegt</h2>
+          <div id="usage-bar-chart" class="usage-bar-chart"></div>
+        </aside>
+        <aside class="usage-bar-panel" aria-label="Raumhöhe">
+          <h2 class="usage-bar-title">Höchste Einrichtung</h2>
+          <div id="height-bar-chart" class="usage-bar-chart"></div>
+        </aside>
+      </div>
+
+      <div class="toolbar" role="toolbar" aria-label="Werkzeuge">
+        <button type="button" class="tool-btn on" data-tool="select">Auswählen</button>
+        <button type="button" class="tool-btn" data-tool="draw">Umrisslinie</button>
+        <button type="button" class="tool-btn" data-tool="door">Tür</button>
+        <button type="button" class="tool-btn" data-tool="gate">Tor</button>
+        <button type="button" class="tool-btn" data-tool="window">Fenster</button>
+        <button type="button" class="tool-btn" data-tool="block">Blocklager</button>
+        <button type="button" class="tool-btn" data-tool="pallet">Palettenregal</button>
+        <button type="button" class="tool-btn" data-tool="cantilever">Kragarm</button>
+        <button type="button" class="tool-btn" data-tool="pan">Verschieben</button>
+      </div>
+
+      <div class="view-tabs" role="tablist">
+        <button type="button" class="view-tab on" data-view="plan">Draufsicht</button>
+        <button type="button" class="view-tab" data-view="front">Frontansicht Regal</button>
+        <button type="button" class="view-tab" data-view="side">Seitenansicht Regal</button>
+      </div>
+
+      <div class="canvas-plan">
+        <canvas id="plan-canvas" aria-label="Lagergrundriss"></canvas>
+        <div id="live-dim" class="live-dim hidden" aria-live="polite"></div>
+        <div class="canvas-footer">
+          <span id="stage-hint" class="stage-hint">Umrisslinien ziehen oder Rechteck-Halle anlegen.</span>
+          <span id="scale-info" class="canvas-scale"></span>
+        </div>
+      </div>
+    </main>
+
+    <aside class="detail-panel" id="detail-panel">
+      <section class="panel">
+        <h2>Auswahl</h2>
+        <div id="detail-content"></div>
+        <div class="detail-actions btn-row">
+          <button type="button" id="btn-rotate" class="btn" disabled>Drehen 90°</button>
+          <button type="button" id="btn-dup" class="btn" disabled>Duplizieren</button>
+          <button type="button" id="btn-delete" class="btn btn-danger" disabled>Löschen</button>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Statistik</h2>
+        <div id="stat-info" class="stat-info"></div>
+      </section>
+    </aside>
+  </div>
+
+  <div id="context-menu" class="context-menu hidden" role="menu">
+    <button type="button" class="context-menu-item" data-action="rotate" role="menuitem">Drehen 90°</button>
+    <button type="button" class="context-menu-item" data-action="dup" role="menuitem">Duplizieren</button>
+    <button type="button" class="context-menu-item" data-action="delete" role="menuitem">Löschen</button>
+  </div>
+
+  <script src="js/geometry.js"></script>
+  <script src="js/catalog.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/app.js"></script>
+  <script src="../back.js"></script>
+</body>
+</html>

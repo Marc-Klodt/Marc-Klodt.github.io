@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Logistik-Tools</title>
-    <meta name="description" content="Logistik-Tools von GoGiLock: Zweidimensionaler Ladeplan, ABC-Analyse, ABC-Lagerzonen, Europalettenschein und Stochastische Bedarfsanalyse." />
+    <meta name="description" content="Logistik-Tools von GoGiLock: Zweidimensionaler Ladeplan, ABC-Analyse, ABC-Lagerzonen, Europalettenschein, Stochastische Bedarfsanalyse und Lagerplanung." />
     <link rel="icon" type="image/svg+xml" href="src/logo.svg" />
     <link rel="icon" type="image/png" href="src/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="src/style.css?v=20" />
+    <link rel="stylesheet" href="src/style.css?v=21" />
   </head>
   <body>
     <div class="app-layout">
@@ -53,6 +53,12 @@
             <a class="sidenav-item" href="#stochastische-bedarfsanalyse" data-open="logistik-stochastik">
               <span class="sidenav-icon"><img src="programs/stochastik/assets/stochastik-icon.png" alt="" width="34" height="34" /></span>
               <span>Stochastische Bedarfsanalyse</span>
+            </a>
+          </li>
+          <li>
+            <a class="sidenav-item" href="#lagerplanung" data-open="logistik-lagerplanung">
+              <span class="sidenav-icon"><img src="programs/lagerplanung/icons/lagerplanung-icon.png" alt="" width="34" height="34" /></span>
+              <span>Lagerplanung</span>
             </a>
           </li>
         </ul>
@@ -175,13 +181,31 @@
               </div>
             </div>
           </div>
+          <div class="home-icon">
+            <button type="button" class="home-icon-btn" aria-describedby="tip-logistik-lagerplanung">
+              <span class="home-icon-glyph"><img src="programs/lagerplanung/icons/lagerplanung-icon.png" alt="" width="102" height="102" /></span>
+              <span class="visually-hidden">Lagerplanung</span>
+            </button>
+            <div class="info-cloud home-icon-tip cloud-v3" id="tip-logistik-lagerplanung" role="tooltip" style="--neon-a:#ff2ad4;--neon-b:#7a5bff">
+              <div class="info-cloud-glow" aria-hidden="true">
+                <span class="cloud-puff puff-a"></span>
+                <span class="cloud-puff puff-b"></span>
+                <span class="cloud-puff puff-c"></span>
+                <div class="info-cloud-plate"></div>
+              </div>
+              <div class="info-cloud-body">
+                <strong>Lagerplanung</strong>
+                <p>Maßstabsgetreuer Grundriss für Blocklager, Paletten- und Kragarmregale.</p>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </div>
-    <script src="src/api.js?v=20"></script>
-    <script src="src/builtins.js?v=20"></script>
-    <script src="src/logistik.js?v=20"></script>
-    <script src="src/runner.js?v=20"></script>
-    <script src="src/app.js?v=20"></script>
+    <script src="src/api.js?v=21"></script>
+    <script src="src/builtins.js?v=21"></script>
+    <script src="src/logistik.js?v=21"></script>
+    <script src="src/runner.js?v=21"></script>
+    <script src="src/app.js?v=21"></script>
   </body>
 </html>

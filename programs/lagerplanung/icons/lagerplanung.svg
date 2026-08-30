@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lagerplanung">
+  <defs>
+    <radialGradient id="bg-black" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#241836"/>
+      <stop offset="100%" stop-color="#07020c"/>
+    </radialGradient>
+    <linearGradient id="rim-lilac" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f5d0fe"/>
+      <stop offset="22%" stop-color="#e879f9"/>
+      <stop offset="55%" stop-color="#c026d3"/>
+      <stop offset="100%" stop-color="#581c87"/>
+    </linearGradient>
+    <linearGradient id="rim-bevel-hi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fae8ff"/>
+      <stop offset="100%" stop-color="#fae8ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rim-bevel-lo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6b21a8" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+    <linearGradient id="hall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <mask id="rim-ring">
+      <rect width="64" height="64" fill="black"/>
+      <circle cx="32" cy="32" r="30" fill="white"/>
+      <circle cx="32" cy="32" r="28" fill="black"/>
+    </mask>
+    <mask id="rim-highlight-mask">
+      <rect width="64" height="64" fill="black"/>
+      <circle cx="32" cy="32" r="30" fill="white"/>
+      <circle cx="32" cy="32" r="28" fill="black"/>
+      <rect x="0" y="0" width="64" height="34" fill="white"/>
+    </mask>
+    <mask id="rim-shadow-mask">
+      <rect width="64" height="64" fill="black"/>
+      <circle cx="32" cy="32" r="30" fill="white"/>
+      <circle cx="32" cy="32" r="28" fill="black"/>
+      <rect x="0" y="30" width="64" height="34" fill="white"/>
+    </mask>
+    <filter id="rim-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.3" flood-color="#f0abfc" flood-opacity="0.95"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="2.6" flood-color="#d946ef" flood-opacity="0.7"/>
+      <feDropShadow dx="0.6" dy="1.1" stdDeviation="0.7" flood-color="#3b0764" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <circle cx="33.2" cy="33.4" r="30" fill="#2a0838"/>
+  <g filter="url(#rim-glow)" mask="url(#rim-ring)">
+    <circle cx="32" cy="32" r="30" fill="url(#rim-lilac)"/>
+    <circle cx="32" cy="32" r="30" fill="url(#rim-bevel-hi)" mask="url(#rim-highlight-mask)" opacity="0.9"/>
+    <circle cx="32" cy="32" r="30" fill="url(#rim-bevel-lo)" mask="url(#rim-shadow-mask)" opacity="0.75"/>
+  </g>
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#fae8ff" stroke-width="0.95" opacity="0.95"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#c026d3" stroke-width="0.7" opacity="0.7"/>
+  <circle cx="32" cy="32" r="28" fill="url(#bg-black)"/>
+  <ellipse cx="28" cy="18" rx="5" ry="3" fill="#fff" opacity="0.07"/>
+
+  <rect x="14" y="18" width="36" height="28" rx="1.2" fill="url(#hall)" stroke="#64748b" stroke-width="1.4"/>
+  <path d="M14 36h8" stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M14 36c3.2-3.6 6.4-3.6 8 0" fill="none" stroke="#fbbf24" stroke-width="0.8"/>
+  <path d="M42 18v6" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+  <rect x="17" y="21" width="12" height="5.2" rx="0.4" fill="#3b82f6"/>
+  <path d="M20.8 21v5.2M24.2 21v5.2" stroke="#93c5fd" stroke-width="0.5"/>
+  <rect x="17" y="28" width="12" height="5.2" rx="0.4" fill="#3b82f6"/>
+  <path d="M20.8 28v5.2M24.2 28v5.2" stroke="#93c5fd" stroke-width="0.5"/>
+  <rect x="32" y="21" width="5.5" height="16" rx="0.4" fill="#22c55e"/>
+  <path d="M34.75 21v16" stroke="#166534" stroke-width="1.2"/>
+  <rect x="39.5" y="32" width="8" height="10" rx="0.3" fill="#0ea5e9" opacity="0.85"/>
+  <path d="M40.2 34.2h6.6M40.2 36.8h6.6M40.2 39.4h6.6" stroke="#7dd3fc" stroke-width="0.45"/>
+</svg>
