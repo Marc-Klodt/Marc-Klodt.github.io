@@ -365,9 +365,6 @@ function renderWorkspace() {
   }
   return `
     <section class="program-stage workspace" aria-label="${escapeHtml(p.name)}">
-      <div class="workspace-toolbar">
-        <a class="btn" id="back-home" href="./">Zurück zur Hauptseite</a>
-      </div>
       ${body}
     </section>`;
 }
