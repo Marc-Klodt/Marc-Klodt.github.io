@@ -264,52 +264,100 @@ html.program-open .nav-edge {
   border: 0;
 }
 
-.home-icon-tip {
+.info-cloud {
+  --neon-a: #39f6ff;
+  --neon-b: #ff2ad4;
   position: absolute;
   left: 50%;
-  top: calc(100% + 14px);
-  transform: translateX(-50%) translateY(6px);
-  width: min(240px, 72vw);
-  padding: 12px 14px;
-  background: var(--paper);
-  color: var(--ink);
-  border: 1px solid rgba(26, 22, 18, 0.08);
-  border-radius: 10px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+  top: calc(100% + 18px);
+  transform: translateX(-50%) translateY(8px);
+  width: min(260px, 74vw);
+  font-size: 0.95rem;
+  color: #000;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
-  z-index: 20;
+  z-index: 25;
+  filter:
+    drop-shadow(1px 0 0 var(--neon-a))
+    drop-shadow(-1px 0 0 var(--neon-b))
+    drop-shadow(0 2px 0 var(--neon-a))
+    drop-shadow(0 -1px 0 var(--neon-b))
+    drop-shadow(0 0 6px var(--neon-a))
+    drop-shadow(0 0 14px var(--neon-b));
 }
 
-.home-icon-tip::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -6px;
-  width: 10px;
-  height: 10px;
-  background: var(--paper);
-  transform: translateX(-50%) rotate(45deg);
+.info-cloud-body {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  color: #000;
+  padding: 20px 22px 16px;
+  border-radius: 42px;
+  text-align: center;
 }
 
-.home-icon-tip strong {
+.info-cloud strong,
+.info-cloud p {
+  color: #000;
+}
+
+.info-cloud strong {
   display: block;
-  margin: 0 0 4px;
-  font-size: 0.92rem;
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
-.home-icon-tip p {
+.info-cloud p {
   margin: 0;
-  color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   line-height: 1.4;
+  font-weight: 500;
 }
 
-.home-icon:hover .home-icon-tip,
-.home-icon:focus-within .home-icon-tip,
-.home-icon.is-open .home-icon-tip {
+.cloud-puff {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.cloud-v1 .info-cloud-body {
+  border-radius: 48px 40px 44px 36px;
+}
+
+.cloud-v1 .puff-a { width: 54px; height: 54px; left: 6%; top: -24px; }
+.cloud-v1 .puff-b { width: 38px; height: 38px; left: 36%; top: -16px; }
+.cloud-v1 .puff-c { width: 48px; height: 48px; right: 8%; top: -20px; }
+
+.cloud-v2 .info-cloud-body {
+  border-radius: 34px 52px 30px 46px;
+}
+
+.cloud-v2 .puff-a { width: 42px; height: 42px; left: 18%; top: -20px; }
+.cloud-v2 .puff-b { width: 58px; height: 58px; right: 12%; top: -28px; }
+.cloud-v2 .puff-c { width: 34px; height: 34px; left: -8px; bottom: 10px; }
+
+.cloud-v3 .info-cloud-body {
+  border-radius: 50px 32px 48px 28px;
+}
+
+.cloud-v3 .puff-a { width: 60px; height: 46px; left: 10%; top: -22px; }
+.cloud-v3 .puff-b { width: 36px; height: 36px; right: 22%; top: -14px; }
+.cloud-v3 .puff-c { width: 44px; height: 44px; right: -6px; bottom: 8px; }
+
+.cloud-v4 .info-cloud-body {
+  border-radius: 38px 46px 34px 50px;
+}
+
+.cloud-v4 .puff-a { width: 40px; height: 40px; left: 4%; top: -18px; }
+.cloud-v4 .puff-b { width: 52px; height: 40px; left: 40%; top: -22px; }
+.cloud-v4 .puff-c { width: 32px; height: 32px; right: 6%; bottom: -8px; }
+
+.home-icon:hover .info-cloud,
+.home-icon:focus-within .info-cloud,
+.home-icon.is-open .info-cloud {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -385,45 +433,11 @@ html.program-open .nav-edge {
 }
 
 .help-badge-tip {
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 12px);
-  transform: translateX(-50%) translateY(6px);
-  width: min(380px, 78vw);
-  padding: 12px 14px;
-  font-size: 0.95rem;
-  background: var(--paper);
-  color: var(--ink);
-  border: 1px solid rgba(26, 22, 18, 0.08);
-  border-radius: 10px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  width: min(320px, 78vw);
   z-index: 30;
 }
 
-.help-badge-tip::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -6px;
-  width: 10px;
-  height: 10px;
-  background: var(--paper);
-  transform: translateX(-50%) rotate(45deg);
-}
-
-.help-badge-tip p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.45;
-  font-weight: 400;
-}
-
-.help-wrap:hover .help-badge-tip {
+.help-wrap:hover .info-cloud {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
@@ -440,7 +454,7 @@ html.program-open .nav-edge {
 .help-panel-text {
   margin: 0;
   padding: 8px 24px 24px;
-  color: var(--muted);
+  color: #000;
   font-size: 1.02rem;
   line-height: 1.55;
 }

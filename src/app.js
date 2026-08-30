@@ -40,6 +40,36 @@ function render() {
   setProgramChrome(!!ui.workspace);
 }
 
+const NEON_PAIRS = [
+  ["#39f6ff", "#ff2ad4"],
+  ["#7dff3a", "#39f6ff"],
+  ["#ffef3a", "#ff2ad4"],
+  ["#ff6a2a", "#7a5bff"],
+  ["#3ee0ff", "#ff6a2a"],
+  ["#b8ff2a", "#ff2ad4"],
+  ["#ff2ad4", "#39f6ff"],
+  ["#ffe14a", "#3ee0ff"],
+];
+
+function randomNeonPair() {
+  return NEON_PAIRS[Math.floor(Math.random() * NEON_PAIRS.length)];
+}
+
+function renderInfoCloud(id, extraClass, title, text) {
+  const [neonA, neonB] = randomNeonPair();
+  const variant = 1 + Math.floor(Math.random() * 4);
+  return `
+    <div class="info-cloud ${extraClass} cloud-v${variant}" id="${id}" role="tooltip" style="--neon-a:${neonA};--neon-b:${neonB}">
+      <span class="cloud-puff puff-a" aria-hidden="true"></span>
+      <span class="cloud-puff puff-b" aria-hidden="true"></span>
+      <span class="cloud-puff puff-c" aria-hidden="true"></span>
+      <div class="info-cloud-body">
+        ${title ? `<strong>${title}</strong>` : ""}
+        <p>${text}</p>
+      </div>
+    </div>`;
+}
+
 function renderHelpBadge() {
   return `
     <div class="help-wrap">
@@ -50,9 +80,7 @@ function renderHelpBadge() {
         </span>
         <span class="visually-hidden">Was ist Logistik-Tools, was soll Logistik-Tools.</span>
       </button>
-      <div class="help-badge-tip" id="tip-site-help" role="tooltip">
-        <p>Was ist Logistik-Tools, was soll Logistik-Tools.</p>
-      </div>
+      ${renderInfoCloud("tip-site-help", "help-badge-tip", "", "Was ist Logistik-Tools, was soll Logistik-Tools.")}
     </div>`;
 }
 
@@ -287,10 +315,7 @@ function renderOverview() {
             <span class="home-icon-glyph">${homeIcon(p)}</span>
             <span class="visually-hidden">${escapeHtml(p.name)}</span>
           </button>
-          <div class="home-icon-tip" id="tip-${escapeHtml(p.id)}" role="tooltip">
-            <strong>${escapeHtml(p.name)}</strong>
-            <p>${escapeHtml(p.description || "")}</p>
-          </div>
+          ${renderInfoCloud("tip-" + escapeHtml(p.id), "home-icon-tip", escapeHtml(p.name), escapeHtml(p.description || ""))}
         </div>`
         )
         .join("")}
