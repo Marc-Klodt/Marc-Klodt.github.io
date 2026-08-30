@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eurojackpot Wahrscheinlichkeitsrechner</title>
+  <link rel="icon" href="img/icon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" href="assets/euro-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="../back.css">
+</head>
+<body>
+  <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
+  <div class="bg-glow"></div>
+  <header class="top">
+    <div class="brand">
+      <span class="logo-mark" aria-hidden="true"><span class="logo-euro">€</span><span class="logo-j">j</span></span>
+      <div>
+        <p class="eyebrow">Eurojackpot · alle Ziehungen seit 2012 · live</p>
+        <h1>Wahrscheinlichkeitsrechner</h1>
+      </div>
+    </div>
+    <div class="header-side">
+      <p class="live-status" id="live-status">Aktualisiere Ziehungen …</p>
+      <label class="period">
+        Zeitraum
+        <select id="period">
+          <option value="current">Aktuelle Regeln (seit 25.03.2022)</option>
+          <option value="all">Gesamte Historie (23.03.2012 – heute)</option>
+          <option value="y5">Letzte 5 Jahre</option>
+          <option value="y1">Letztes Jahr</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <p class="notice">
+    Eurojackpot gibt es erst seit dem <strong>23. März 2012</strong> — rund 14 Jahre, nicht 20.
+    Jede Ziehung ist unabhängig: Die Jackpot-Chance bleibt <strong>1 zu 139.838.160</strong>,
+    egal wie oft eine Zahl bisher kam. Die Häufigkeiten sind Statistik, keine Vorhersage.
+  </p>
+
+  <nav class="tabs" aria-label="Bereiche">
+    <button class="tab is-active" data-tab="overview">Übersicht</button>
+    <button class="tab" data-tab="freq">Frequenz</button>
+    <button class="tab" data-tab="calc">Rechner</button>
+    <button class="tab" data-tab="gen">Tipp-Generator</button>
+    <button class="tab" data-tab="archive">Archiv</button>
+  </nav>
+
+  <main>
+    <section id="tab-overview" class="panel is-active"></section>
+    <section id="tab-freq" class="panel" hidden></section>
+    <section id="tab-calc" class="panel" hidden></section>
+    <section id="tab-gen" class="panel" hidden></section>
+    <section id="tab-archive" class="panel" hidden></section>
+  </main>
+
+  <footer>
+    Datenstand: <span id="data-stamp">–</span>.
+    Gewinnklassen nach aktueller Formel 5 aus 50 und 2 aus 12.
+  </footer>
+
+  <div id="forecast-ask" class="ask-overlay" hidden>
+    <div class="ask-box card" role="dialog" aria-labelledby="ask-title">
+      <h3 id="ask-title">Neue Vorhersage?</h3>
+      <p id="ask-text" class="muted">Es liegt bereits eine Vorhersage vor.</p>
+      <div class="actions">
+        <button type="button" class="btn secondary" id="forecast-keep">Bei aktueller bleiben</button>
+        <button type="button" class="btn predict" id="forecast-new">Neue Vorhersage erstellen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ki-print-ask" class="ask-overlay" hidden>
+    <div class="ask-box card" role="dialog" aria-labelledby="ki-print-title">
+      <h3 id="ki-print-title">Zahlen drucken</h3>
+      <p class="muted">Nur KI-Tipp und die zwölf KI-Vorhersagen. Erklärungen werden nicht mitgedruckt.</p>
+      <div class="actions print-choices">
+        <button type="button" class="btn secondary" id="ki-print-bw">Schwarz-Weiß</button>
+        <button type="button" class="btn ki" id="ki-print-color">Farbe</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/draws.js"></script>
+  <script src="js/app.js"></script>
+  <script src="../back.js"></script>
+</body>
+</html>
