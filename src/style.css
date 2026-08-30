@@ -423,12 +423,26 @@ html.program-open .nav-edge {
   font-weight: 400;
 }
 
-.help-wrap:hover .help-badge-tip,
-.help-wrap:focus-within .help-badge-tip,
-.help-wrap.is-open .help-badge-tip {
+.help-wrap:hover .help-badge-tip {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
+}
+
+.help-overlay {
+  z-index: 60;
+}
+
+.help-panel {
+  width: min(520px, 100%);
+}
+
+.help-panel-text {
+  margin: 0;
+  padding: 8px 24px 24px;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.55;
 }
 
 .help-badge-rim {

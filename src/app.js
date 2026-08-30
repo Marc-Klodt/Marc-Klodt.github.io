@@ -10,6 +10,7 @@ const ui = {
   notice: "",
   error: "",
   accountOpen: false,
+  helpOpen: false,
   publicMode: false,
 };
 
@@ -47,12 +48,33 @@ function renderHelpBadge() {
         <span class="help-badge-core" aria-hidden="true">
           <span class="help-q">?</span>
         </span>
-        <span class="visually-hidden">Was ist Logistik-Tools?</span>
+        <span class="visually-hidden">Was ist Logistik-Tools, was soll Logistik-Tools.</span>
       </button>
       <div class="help-badge-tip" id="tip-site-help" role="tooltip">
-        <p>Hier bei Logistik-Tools sollen Hilfsmittel für den Bedarf in der Logistik gesammelt, entwickelt, verbessert und nutzbar gemacht werden.</p>
+        <p>Was ist Logistik-Tools, was soll Logistik-Tools.</p>
       </div>
     </div>`;
+}
+
+function renderHelpDialog() {
+  if (!ui.helpOpen) return "";
+  return `
+    <div class="overlay help-overlay" id="help-overlay">
+      <div class="panel help-panel" role="dialog" aria-labelledby="help-dialog-title">
+        <div class="panel-head">
+          <div>
+            <h2 id="help-dialog-title">Was ist Logistik-Tools, was soll Logistik-Tools.</h2>
+          </div>
+          <button class="icon-btn" type="button" id="close-help" aria-label="Schließen">×</button>
+        </div>
+        <p class="help-panel-text">Hier bei Logistik-Tools sollen Hilfsmittel für den Bedarf in der Logistik gesammelt, entwickelt, verbessert und nutzbar gemacht werden.</p>
+      </div>
+    </div>`;
+}
+
+function closeHelp() {
+  ui.helpOpen = false;
+  render();
 }
 
 function renderBrand() {
@@ -135,6 +157,7 @@ function renderGuest() {
         </aside>
       </div>
         `}
+    ${!ui.workspace ? renderHelpDialog() : ""}
   `;
 }
 
@@ -242,6 +265,7 @@ function renderApp() {
         ${ui.notice ? `<p class="banner good">${escapeHtml(ui.notice)}</p>` : ""}
         ${ui.workspace ? renderWorkspace() : renderOverview()}
     ${ui.accountOpen && !ui.publicMode ? renderPasswordPanel() : ""}
+    ${!ui.workspace ? renderHelpDialog() : ""}
   `;
 }
 
@@ -405,29 +429,42 @@ function goHome(event) {
 }
 
 function bindHomeIcons() {
-  root.querySelectorAll(".home-icon-btn, .help-badge").forEach((btn) => {
+  root.querySelectorAll(".home-icon-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
-      const wrap = btn.closest(".home-icon, .help-wrap");
+      const wrap = btn.closest(".home-icon");
       if (!wrap) return;
       const open = wrap.classList.contains("is-open");
-      root.querySelectorAll(".home-icon, .help-wrap").forEach((el) => el.classList.remove("is-open"));
+      root.querySelectorAll(".home-icon").forEach((el) => el.classList.remove("is-open"));
       if (!open) wrap.classList.add("is-open");
     });
   });
   if (!document.documentElement.dataset.homeTipsBound) {
     document.documentElement.dataset.homeTipsBound = "1";
     document.addEventListener("click", (e) => {
-      if (!e.target.closest(".home-icon, .help-wrap")) {
-        document.querySelectorAll(".home-icon.is-open, .help-wrap.is-open").forEach((el) => el.classList.remove("is-open"));
+      if (!e.target.closest(".home-icon")) {
+        document.querySelectorAll(".home-icon.is-open").forEach((el) => el.classList.remove("is-open"));
       }
     });
   }
 }
 
+function bindHelpBadge() {
+  document.querySelector(".help-badge")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    ui.helpOpen = true;
+    render();
+  });
+  document.getElementById("close-help")?.addEventListener("click", closeHelp);
+  document.getElementById("help-overlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "help-overlay") closeHelp();
+  });
+}
+
 function bindNav() {
   document.getElementById("back-home")?.addEventListener("click", goHome);
   bindHomeIcons();
+  bindHelpBadge();
   root.querySelectorAll("[data-open]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.preventDefault();
@@ -586,7 +623,9 @@ async function boot() {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (ui.workspace) {
+    if (ui.helpOpen) {
+      closeHelp();
+    } else if (ui.workspace) {
       goHome();
     } else if (ui.accountOpen) {
       closePw();
