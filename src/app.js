@@ -41,12 +41,18 @@ function render() {
 
 function renderHelpBadge() {
   return `
-    <span class="help-badge" title="Hinweise">
-      <span class="help-badge-rim" aria-hidden="true"></span>
-      <span class="help-badge-core" aria-hidden="true">
-        <span class="help-q">?</span>
-      </span>
-    </span>`;
+    <div class="help-wrap">
+      <button type="button" class="help-badge" aria-describedby="tip-site-help">
+        <span class="help-badge-rim" aria-hidden="true"></span>
+        <span class="help-badge-core" aria-hidden="true">
+          <span class="help-q">?</span>
+        </span>
+        <span class="visually-hidden">Was ist Logistik-Tools?</span>
+      </button>
+      <div class="help-badge-tip" id="tip-site-help" role="tooltip">
+        <p>Hier bei Logistik-Tools sollen Hilfsmittel für den Bedarf in der Logistik gesammelt, entwickelt, verbessert und nutzbar gemacht werden.</p>
+      </div>
+    </div>`;
 }
 
 function renderBrand() {
@@ -399,20 +405,21 @@ function goHome(event) {
 }
 
 function bindHomeIcons() {
-  root.querySelectorAll(".home-icon-btn").forEach((btn) => {
+  root.querySelectorAll(".home-icon-btn, .help-badge").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
-      const wrap = btn.closest(".home-icon");
+      const wrap = btn.closest(".home-icon, .help-wrap");
+      if (!wrap) return;
       const open = wrap.classList.contains("is-open");
-      root.querySelectorAll(".home-icon").forEach((el) => el.classList.remove("is-open"));
+      root.querySelectorAll(".home-icon, .help-wrap").forEach((el) => el.classList.remove("is-open"));
       if (!open) wrap.classList.add("is-open");
     });
   });
   if (!document.documentElement.dataset.homeTipsBound) {
     document.documentElement.dataset.homeTipsBound = "1";
     document.addEventListener("click", (e) => {
-      if (!e.target.closest(".home-icon")) {
-        document.querySelectorAll(".home-icon.is-open").forEach((el) => el.classList.remove("is-open"));
+      if (!e.target.closest(".home-icon, .help-wrap")) {
+        document.querySelectorAll(".home-icon.is-open, .help-wrap.is-open").forEach((el) => el.classList.remove("is-open"));
       }
     });
   }

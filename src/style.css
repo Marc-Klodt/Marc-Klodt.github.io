@@ -363,14 +363,72 @@ html.program-open .nav-edge {
   font-size: 1em;
 }
 
+.help-wrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
 .help-badge {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: help;
   position: relative;
   width: 0.95em;
   height: 0.95em;
-  flex-shrink: 0;
   display: inline-grid;
   place-items: center;
   isolation: isolate;
+}
+
+.help-badge-tip {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 12px);
+  transform: translateX(-50%) translateY(6px);
+  width: min(380px, 78vw);
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid rgba(26, 22, 18, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+  z-index: 30;
+}
+
+.help-badge-tip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--paper);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.help-badge-tip p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.help-wrap:hover .help-badge-tip,
+.help-wrap:focus-within .help-badge-tip,
+.help-wrap.is-open .help-badge-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .help-badge-rim {
