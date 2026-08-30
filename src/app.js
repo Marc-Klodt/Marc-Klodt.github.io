@@ -39,16 +39,39 @@ function render() {
   setProgramChrome(!!ui.workspace);
 }
 
+function renderHelpBadge() {
+  return `
+    <span class="help-badge" title="Hinweise">
+      <span class="help-badge-rim" aria-hidden="true"></span>
+      <span class="help-badge-core" aria-hidden="true">
+        <span class="help-q">?</span>
+      </span>
+    </span>`;
+}
+
+function renderBrand() {
+  if (ui.workspace) {
+    return `
+      <div class="brand">
+        <span class="mark">GoGiLock</span>
+        <h1>${escapeHtml(ui.workspace.name)}</h1>
+        ${ui.workspace.description ? `<p>${escapeHtml(ui.workspace.description)}</p>` : ""}
+      </div>`;
+  }
+  return `
+    <div class="brand">
+      <span class="mark">GoGiLock</span>
+      <div class="brand-title">
+        <h1>Logistik-Tools</h1>
+        ${renderHelpBadge()}
+      </div>
+    </div>`;
+}
+
 function renderGuest() {
   root.innerHTML = `
         <header class="topbar">
-          <div class="brand">
-            <span class="mark">GoGiLock</span>
-            <h1>${ui.workspace ? escapeHtml(ui.workspace.name) : "Logistik-Tools"}</h1>
-            <p>${ui.workspace
-              ? escapeHtml(ui.workspace.description || "")
-              : "Zweidimensionaler Ladeplan, ABC-Analyse und ABC-Lagerzonen – Programme in der Leiste links öffnen."}</p>
-          </div>
+          ${renderBrand()}
         </header>
         ${ui.workspace ? renderWorkspace() : `
       <div class="auth-grid">
@@ -199,13 +222,7 @@ function renderSidenav() {
 function renderApp() {
   root.innerHTML = `
         <header class="topbar">
-          <div class="brand">
-            <span class="mark">GoGiLock</span>
-            <h1>${ui.workspace ? escapeHtml(ui.workspace.name) : "Logistik-Tools"}</h1>
-            <p>${ui.workspace
-              ? escapeHtml(ui.workspace.description || "")
-              : "Zweidimensionaler Ladeplan, ABC-Analyse und ABC-Lagerzonen – Programme in der Leiste links öffnen."}</p>
-          </div>
+          ${renderBrand()}
           <div class="top-actions">
             ${ui.publicMode ? "" : `
             <div class="account">
