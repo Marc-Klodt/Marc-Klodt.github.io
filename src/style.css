@@ -124,7 +124,25 @@ html.program-open .nav-edge {
 }
 
 .app-layout.program-open .app-main {
-  padding: 16px 16px 20px;
+  padding: 0;
+}
+
+.app-layout.program-open .app-main > .topbar,
+.app-layout.program-open .workspace-toolbar,
+.workspace-toolbar,
+#back-home {
+  display: none !important;
+}
+
+.app-layout.program-open .program-stage {
+  min-height: 100vh;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.app-layout.program-open .program-stage iframe {
+  min-height: 100vh;
 }
 
 .sidenav-home,
@@ -964,12 +982,7 @@ textarea {
 }
 
 .workspace-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  background: #ece5d8;
+  display: none !important;
 }
 
 .workspace-toolbar h2 {
