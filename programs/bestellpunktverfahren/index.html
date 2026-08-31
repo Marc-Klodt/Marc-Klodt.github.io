@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bestellpunktverfahren</title>
+  <link rel="icon" href="icons/bestellpunkt.svg?v=1" type="image/svg+xml">
+  <link rel="icon" type="image/png" href="icons/bestellpunkt-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../back.css">
+</head>
+<body>
+  <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <img src="icons/bestellpunkt.svg?v=1" alt="" class="header-logo" width="44" height="44">
+        <div>
+          <h1>Bestellpunktverfahren</h1>
+          <p class="subtitle">Meldebestand, Sicherheitsbestand und Bestellmenge nach (s, Q)</p>
+        </div>
+      </div>
+      <div id="header-stats" class="header-stats" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Artikel</h2>
+        <div id="article-list" class="article-list"></div>
+        <div class="btn-row">
+          <button type="button" id="btn-add" class="btn btn-primary" style="margin-top:0">Neuer Artikel</button>
+          <button type="button" id="btn-delete" class="btn btn-danger">Löschen</button>
+        </div>
+        <p class="panel-note">Artikel werden automatisch im Browser gespeichert.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Stammdaten</h2>
+        <label>Bezeichnung
+          <input type="text" id="name" maxlength="60" placeholder="z. B. Schraube M8">
+        </label>
+        <div class="input-row">
+          <label>Artikelnummer
+            <input type="text" id="sku" maxlength="40" placeholder="SKU">
+          </label>
+          <label>Einheit
+            <input type="text" id="unit" maxlength="12" value="Stk">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Bedarf</h2>
+        <div class="input-row">
+          <label>Verbrauch
+            <input type="number" id="demand" min="0" step="0.1" value="40">
+          </label>
+          <label>pro
+            <select id="period">
+              <option value="tag">Tag</option>
+              <option value="woche">Woche</option>
+              <option value="monat">Monat</option>
+              <option value="jahr">Jahr</option>
+            </select>
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Streuung σ
+            <input type="number" id="sigma" min="0" step="0.1" value="8">
+          </label>
+          <label>Arbeitstage / Jahr
+            <input type="number" id="workingDays" min="1" max="366" step="1" value="250">
+          </label>
+        </div>
+        <p class="panel-note">σ bezieht sich auf denselben Zeitraum wie der Verbrauch.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Wiederbeschaffung</h2>
+        <label>Wiederbeschaffungszeit (Tage)
+          <input type="number" id="leadDays" min="0" step="0.5" value="5">
+        </label>
+        <label>Sicherheitsbestand
+          <select id="ssMode">
+            <option value="service">Servicegrad (z · σ · √WBZ)</option>
+            <option value="days">Zusätzliche Reichweite (Tage)</option>
+            <option value="fixed">Feste Menge</option>
+          </select>
+        </label>
+        <div id="ss-service">
+          <label>Servicegrad (%)
+            <input type="number" id="serviceLevel" min="50" max="99.9" step="0.1" value="95">
+          </label>
+        </div>
+        <div id="ss-days" class="hidden">
+          <label>Zusätzliche Tage
+            <input type="number" id="extraDays" min="0" step="0.5" value="3">
+          </label>
+        </div>
+        <div id="ss-fixed" class="hidden">
+          <label>Sicherheitsbestand (Menge)
+            <input type="number" id="ssFixed" min="0" step="1" value="50">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Bestellmenge</h2>
+        <div class="input-row">
+          <label>Bestellkosten (€)
+            <input type="number" id="orderCost" min="0" step="0.01" value="45">
+          </label>
+          <label>Stückpreis (€)
+            <input type="number" id="unitPrice" min="0" step="0.01" value="2.4">
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Lagerkostensatz (%)
+            <input type="number" id="holdRate" min="0" step="0.1" value="18">
+          </label>
+          <label>oder € / Stück · Jahr
+            <input type="number" id="holdCost" min="0" step="0.01" value="0" placeholder="optional">
+          </label>
+        </div>
+        <div class="input-row">
+          <label>Gebinde
+            <input type="number" id="packSize" min="0" step="1" value="1">
+          </label>
+          <label>Mindestmenge
+            <input type="number" id="minQty" min="0" step="1" value="0">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Ist-Bestand</h2>
+        <div class="input-row">
+          <label>Lagerbestand
+            <input type="number" id="stock" min="0" step="1" value="180">
+          </label>
+          <label>Offene Bestellungen
+            <input type="number" id="onOrder" min="0" step="1" value="0">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Daten</h2>
+        <div class="btn-row">
+          <button type="button" id="btn-sample" class="btn">Beispiele</button>
+          <button type="button" id="btn-print" class="btn">Drucken</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" id="btn-export" class="btn btn-primary">JSON speichern</button>
+          <button type="button" id="btn-import" class="btn">Laden</button>
+        </div>
+        <input type="file" id="file-import" accept=".json" class="hidden">
+      </section>
+    </aside>
+
+    <main class="canvas-area">
+      <div class="chart-panels-row" id="usage-bars"></div>
+      <div class="canvas-plan">
+        <canvas id="rop-canvas" aria-label="Sägezahndiagramm Bestellpunkt"></canvas>
+        <div class="canvas-footer">
+          <p class="hint">Bestellung, sobald der verfügbare Bestand den Bestellpunkt s erreicht oder unterschreitet.</p>
+          <div class="legend">
+            <span><i style="background:#00e5ff"></i>Bestellpunkt</span>
+            <span><i style="background:#39ff14"></i>Sicherheitsbestand</span>
+            <span><i style="background:#60a5fa"></i>Bestandsverlauf</span>
+            <span><i style="background:#fbbf24"></i>Aktueller Bestand</span>
+          </div>
+        </div>
+      </div>
+      <section class="panel overview-wrap" style="margin-top:0.75rem; background: var(--surface);">
+        <h2>Übersicht</h2>
+        <table class="overview">
+          <thead>
+            <tr>
+              <th>Artikel</th>
+              <th class="num">Bestand</th>
+              <th class="num">s</th>
+              <th class="num">Q</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="overview-body"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <aside class="detail-panel">
+      <section class="panel">
+        <h2>Bestellvorschlag</h2>
+        <div id="order-banner" class="order-banner ok">Kein Artikel gewählt.</div>
+      </section>
+      <section class="panel">
+        <h2>Kennzahlen</h2>
+        <dl id="result-grid" class="result-grid"></dl>
+      </section>
+      <section class="panel">
+        <h2>Formeln</h2>
+        <p class="formula" id="formula-box"></p>
+      </section>
+    </aside>
+  </div>
+
+  <script src="js/calc.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/app.js"></script>
+  <script src="../back.js"></script>
+</body>
+</html>

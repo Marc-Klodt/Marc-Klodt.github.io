@@ -53,4 +53,13 @@ const logistikPrograms = [
     type: "embed",
     url: "programs/lagerplanung/index.html",
   },
+  {
+    id: "logistik-bestellpunkt",
+    name: "Bestellpunktverfahren",
+    description: "Meldebestand, Sicherheitsbestand und Bestellmenge nach (s, Q).",
+    iconUrl: "programs/bestellpunktverfahren/icons/bestellpunkt-icon.png",
+    accent: "#00e5ff",
+    type: "embed",
+    url: "programs/bestellpunktverfahren/index.html",
+  },
 ];

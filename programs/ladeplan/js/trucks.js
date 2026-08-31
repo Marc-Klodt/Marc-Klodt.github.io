@@ -4,6 +4,7 @@ const TRUCK_TYPES = [
     name: 'Sprinter / Kastenwagen',
     length: 3.70,
     width: 1.75,
+    interiorHeight: 1.70,
     maxWeight: 1200,
     category: 'Transporter',
     note: 'Typischer Laderaum bis 3,7 m',
@@ -13,6 +14,7 @@ const TRUCK_TYPES = [
     name: 'Transporter 3,5 t',
     length: 4.20,
     width: 2.10,
+    interiorHeight: 1.90,
     maxWeight: 1500,
     category: 'Transporter',
     note: 'z.B. Iveco Daily, Mercedes Sprinter XL',
@@ -22,6 +24,7 @@ const TRUCK_TYPES = [
     name: 'LKW 7,5 t – Plane',
     length: 6.00,
     width: 2.45,
+    interiorHeight: 2.45,
     maxWeight: 3000,
     category: 'LKW',
     note: 'Standard-Aufbau, ca. 33 Lademeter-Äquivalent',
@@ -31,6 +34,7 @@ const TRUCK_TYPES = [
     name: 'LKW 7,5 t – Koffer',
     length: 6.00,
     width: 2.35,
+    interiorHeight: 2.35,
     maxWeight: 2800,
     category: 'LKW',
     note: 'Geschlossener Kofferaufbau',
@@ -40,6 +44,7 @@ const TRUCK_TYPES = [
     name: 'LKW 12 t – Plane',
     length: 7.20,
     width: 2.45,
+    interiorHeight: 2.45,
     maxWeight: 6000,
     category: 'LKW',
     note: 'Mittelklasse-Verteiler',
@@ -49,6 +54,7 @@ const TRUCK_TYPES = [
     name: 'LKW 12 t – Koffer',
     length: 7.20,
     width: 2.35,
+    interiorHeight: 2.35,
     maxWeight: 5800,
     category: 'LKW',
     note: 'Möbel-/Umzugskoffer',
@@ -58,6 +64,7 @@ const TRUCK_TYPES = [
     name: 'LKW 18 t – Plane',
     length: 7.80,
     width: 2.45,
+    interiorHeight: 2.45,
     maxWeight: 11000,
     category: 'LKW',
     note: 'Schwere Verteilung',
@@ -67,6 +74,7 @@ const TRUCK_TYPES = [
     name: 'Sattelzug – Standard',
     length: 13.60,
     width: 2.48,
+    interiorHeight: 2.70,
     maxWeight: 24000,
     category: 'Sattelzug',
     note: 'EU-Länge 13,6 m Ladeboden',
@@ -76,6 +84,7 @@ const TRUCK_TYPES = [
     name: 'Sattelzug – Mega / Jumbo',
     length: 13.60,
     width: 2.48,
+    interiorHeight: 3.00,
     maxWeight: 24000,
     category: 'Sattelzug',
     note: 'Erhöhte Innenhöhe (3 m), gleiche Grundfläche',
@@ -85,6 +94,7 @@ const TRUCK_TYPES = [
     name: 'Sattelzug – Kurz (City)',
     length: 10.00,
     width: 2.48,
+    interiorHeight: 2.70,
     maxWeight: 18000,
     category: 'Sattelzug',
     note: 'Für beengte Zufahrten',
@@ -94,6 +104,7 @@ const TRUCK_TYPES = [
     name: 'Anhänger – Plane',
     length: 7.00,
     width: 2.48,
+    interiorHeight: 2.70,
     maxWeight: 8000,
     category: 'Anhänger',
     note: 'Einzelanhänger, typisch 7 m',
@@ -103,6 +114,7 @@ const TRUCK_TYPES = [
     name: 'Anhänger – Lang',
     length: 13.60,
     width: 2.48,
+    interiorHeight: 2.70,
     maxWeight: 18000,
     category: 'Anhänger',
     note: 'Großanhänger / Sattelauflieger-Ersatz',
@@ -112,6 +124,7 @@ const TRUCK_TYPES = [
     name: 'Kühl-LKW / Kühl-Sattel',
     length: 13.60,
     width: 2.45,
+    interiorHeight: 2.60,
     maxWeight: 22000,
     category: 'Spezial',
     note: 'Isolierter Kühlaufbau',
@@ -121,6 +134,7 @@ const TRUCK_TYPES = [
     name: 'Tieflader (Ladeboden)',
     length: 12.00,
     width: 2.55,
+    interiorHeight: 2.20,
     maxWeight: 35000,
     category: 'Spezial',
     note: 'Schwerlast / Maschinentransport',
@@ -130,6 +144,7 @@ const TRUCK_TYPES = [
     name: 'Benutzerdefiniert …',
     length: 6.00,
     width: 2.45,
+    interiorHeight: 2.45,
     maxWeight: 3000,
     category: 'Individuell',
     note: 'Eigene Maße eingeben',
@@ -137,17 +152,17 @@ const TRUCK_TYPES = [
 ];
 
 const CARGO_PRESETS = [
-  { id: 'europalette', name: 'Europalette', length: 1.20, width: 0.80, color: '#3b82f6' },
-  { id: 'industriepalette', name: 'Industriepalette', length: 1.20, width: 1.00, color: '#6366f1' },
-  { id: 'gitterbox', name: 'Gitterbox (GL)', length: 1.20, width: 0.80, color: '#8b5cf6' },
-  { id: 'halbpalette', name: 'Halbpalette', length: 0.80, width: 0.60, color: '#06b6d4' },
-  { id: 'ibc', name: 'IBC-Container', length: 1.20, width: 1.00, color: '#14b8a6' },
-  { id: 'rollcontainer', name: 'Rollcontainer', length: 0.80, width: 0.70, color: '#f59e0b' },
-  { id: 'kiste_klein', name: 'Kiste klein', length: 0.60, width: 0.40, color: '#f97316' },
-  { id: 'kiste_gross', name: 'Kiste groß', length: 1.20, width: 0.80, color: '#ef4444' },
-  { id: 'wt_runge_120', name: 'WT Runge', length: 1.20, width: 0.60, color: '#22c55e' },
-  { id: 'transport_runge_330', name: 'Transport-Runge', length: 3.30, width: 0.60, color: '#0ea5e9' },
-  { id: 'transport_runge_500', name: 'Transport-Runge', length: 5.00, width: 0.60, color: '#a855f7' },
+  { id: 'europalette', name: 'Europalette', length: 1.20, width: 0.80, height: 1.00, color: '#3b82f6' },
+  { id: 'industriepalette', name: 'Industriepalette', length: 1.20, width: 1.00, height: 1.00, color: '#6366f1' },
+  { id: 'gitterbox', name: 'Gitterbox (GL)', length: 1.20, width: 0.80, height: 0.97, color: '#8b5cf6' },
+  { id: 'halbpalette', name: 'Halbpalette', length: 0.80, width: 0.60, height: 0.80, color: '#06b6d4' },
+  { id: 'ibc', name: 'IBC-Container', length: 1.20, width: 1.00, height: 1.14, color: '#14b8a6' },
+  { id: 'rollcontainer', name: 'Rollcontainer', length: 0.80, width: 0.70, height: 1.65, color: '#f59e0b' },
+  { id: 'kiste_klein', name: 'Kiste klein', length: 0.60, width: 0.40, height: 0.40, color: '#f97316' },
+  { id: 'kiste_gross', name: 'Kiste groß', length: 1.20, width: 0.80, height: 0.80, color: '#ef4444' },
+  { id: 'wt_runge_120', name: 'WT Runge', length: 1.20, width: 0.60, height: 0.60, color: '#22c55e' },
+  { id: 'transport_runge_330', name: 'Transport-Runge', length: 3.30, width: 0.60, height: 0.60, color: '#0ea5e9' },
+  { id: 'transport_runge_500', name: 'Transport-Runge', length: 5.00, width: 0.60, height: 0.60, color: '#a855f7' },
 ];
 
 const CARGO_COLORS = [
@@ -155,3 +170,11 @@ const CARGO_COLORS = [
   '#14b8a6', '#22c55e', '#f59e0b', '#f97316',
   '#ef4444', '#ec4899', '#a855f7', '#0ea5e9',
 ];
+
+function getTruckInteriorHeight(truck) {
+  if (!truck) return 2.45;
+  if (truck.interiorHeight != null) return truck.interiorHeight;
+  if (truck.category === 'Sattelzug' && truck.id === 'sattel_mega') return 3.0;
+  if (truck.category === 'Transporter') return 1.8;
+  return 2.45;
+}

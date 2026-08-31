@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+
+<html lang="de">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Ladeplan 3D – LKW Beladungsplaner</title>
+
+  <link rel="icon" href="../icons/ladeplan.ico?v=12" sizes="32x32">
+
+  <link rel="icon" href="../icons/ladeplan.svg?v=12" type="image/svg+xml">
+
+  <link rel="stylesheet" href="../css/style.css">
+
+  <link rel="stylesheet" href="css/style-3d.css">
+  <link rel="stylesheet" href="../../back.css">
+
+</head>
+
+<body>
+
+  <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
+  <header class="header">
+
+    <div class="header-inner">
+
+      <div class="header-brand">
+
+        <a href="../index.html" aria-label="Ladeplan Start">
+
+          <img src="../icons/ladeplan.svg?v=12" alt="" class="header-logo" width="44" height="44">
+
+        </a>
+
+        <div class="header-brand-text">
+
+          <nav class="header-nav" aria-label="Ladeplan Versionen">
+
+            <a href="../index.html" class="header-nav-btn">Ladeplan 2D</a>
+
+            <div class="header-nav-3d-wrap">
+
+              <a href="index.html" class="header-nav-btn is-active-3d" aria-current="page">Ladeplan 3D</a>
+
+              <p class="header-nav-note">Dreidimensionaler Beladungsplaner mit Höhenberechnung für Standard- und eigenes Ladegut</p>
+
+            </div>
+
+          </nav>
+
+          <p class="subtitle">Laderaum in Länge, Breite und Höhe – inkl. Stapeln und eigenem Ladegut</p>
+
+        </div>
+
+      </div>
+
+      <div id="header-truck-info" class="header-truck-info" aria-live="polite"></div>
+
+    </div>
+
+  </header>
+
+
+
+  <div class="app app-3d">
+
+    <aside class="sidebar">
+
+      <section class="panel">
+
+        <h2>Fahrzeug</h2>
+
+        <label for="truck-select">LKW-Typ</label>
+
+        <select id="truck-select"></select>
+
+        <p id="truck-height-info" class="stat-info ok"></p>
+
+        <div id="custom-truck-fields" class="custom-fields hidden">
+
+          <label>Länge (m)
+
+            <input type="number" id="custom-length" min="1" max="20" step="0.1" value="6.0">
+
+          </label>
+
+          <label>Breite (m)
+
+            <input type="number" id="custom-width" min="1" max="3" step="0.05" value="2.45">
+
+          </label>
+
+          <label>Innenhöhe (m)
+
+            <input type="number" id="custom-height" min="1" max="4" step="0.05" value="2.45">
+
+          </label>
+
+          <label>Nutzlast max. (kg)
+
+            <input type="number" id="custom-max-weight" min="100" max="50000" step="100" value="3000">
+
+          </label>
+
+        </div>
+
+      </section>
+
+
+
+      <section class="panel">
+
+        <h2>Ladegut hinzufügen</h2>
+
+        <label>Anzahl
+
+          <input type="number" id="cargo-qty" min="1" max="99" step="1" value="1">
+
+        </label>
+
+        <label>Standard-Höhe für Presets (cm)
+
+          <input type="number" id="preset-default-height" min="10" max="300" step="1" value="100" title="Wird beim Hinzufügen aus Presets verwendet, kann pro Ladegut später geändert werden">
+
+        </label>
+
+        <div class="preset-grid" id="cargo-presets"></div>
+
+        <div class="custom-cargo">
+
+          <h3>Eigene Maße</h3>
+
+          <div class="input-row-3">
+
+            <label>L (cm)<input type="number" id="cargo-length" min="10" max="1400" step="1" value="120"></label>
+
+            <label>B (cm)<input type="number" id="cargo-width" min="10" max="250" step="1" value="80"></label>
+
+            <label>H (cm)<input type="number" id="cargo-height" min="10" max="300" step="1" value="100"></label>
+
+          </div>
+
+          <label>Gewicht (kg, optional)
+
+            <input type="number" id="cargo-weight" min="0" max="50000" step="1" placeholder="individuell">
+
+          </label>
+
+          <label>Bezeichnung<input type="text" id="cargo-label" placeholder="z.B. Kiste A" maxlength="30"></label>
+
+          <button type="button" id="btn-add-cargo" class="btn btn-primary">Ladegut platzieren</button>
+
+        </div>
+
+      </section>
+
+
+
+      <section class="panel">
+
+        <h2>Ladegut im Plan</h2>
+
+        <p class="panel-note">Höhe, Gewicht und Maße pro Ladegut individuell anpassbar.</p>
+
+        <div id="cargo-items-list" class="cargo-items-list"></div>
+
+        <p id="cargo-items-empty" class="panel-note">Noch kein Ladegut im Plan.</p>
+
+      </section>
+
+
+
+      <section class="panel">
+
+        <h2>Automatischer Ladeplan</h2>
+
+        <label class="checkbox-label">
+
+          <input type="checkbox" id="auto-rotate" checked>
+
+          Drehung erlauben (90° in Draufsicht)
+
+        </label>
+
+        <label class="checkbox-label">
+
+          <input type="checkbox" id="auto-respect-weight" checked>
+
+          Nutzlast beachten
+
+        </label>
+
+        <label class="checkbox-label">
+
+          <input type="checkbox" id="snap-grid" checked>
+
+          Am Raster ausrichten (10 cm)
+
+        </label>
+
+        <button type="button" id="btn-auto-pack" class="btn btn-primary">Besten 3D-Ladeplan erstellen</button>
+
+        <div id="auto-result" class="stat-info"></div>
+
+      </section>
+
+
+
+      <section class="panel">
+
+        <h2>Statistik</h2>
+
+        <div id="volume-info" class="stat-info"></div>
+
+        <div id="weight-info" class="stat-info"></div>
+
+        <div id="height-info" class="stat-info"></div>
+
+        <div id="collision-info" class="stat-info"></div>
+
+      </section>
+
+
+
+      <section class="panel">
+
+        <h2>Plan</h2>
+
+        <label class="checkbox-label">
+
+          <input type="checkbox" id="show-grid" checked>
+
+          Gitternetz anzeigen (10 cm)
+
+        </label>
+
+        <div class="btn-row">
+
+          <button type="button" id="btn-clear" class="btn">Alle Ladegüter entfernen</button>
+
+        </div>
+
+      </section>
+
+
+
+      <section class="panel">
+
+        <h2>Drucken & Abschließen</h2>
+
+        <div class="save-print-row">
+
+          <button type="button" id="btn-print-pdf" class="btn-print-format" aria-label="Als PDF drucken">
+
+            <svg class="btn-print-format-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+
+              <path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 10H6v-4h12v4zm1-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-2-5H7v3h10V5z"/>
+
+            </svg>
+
+            <span class="btn-print-format-label">PDF</span>
+
+          </button>
+
+          <button type="button" id="btn-print-excel" class="btn-print-format" aria-label="Als Excel drucken">
+
+            <svg class="btn-print-format-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+
+              <path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 10H6v-4h12v4zm1-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-2-5H7v3h10V5z"/>
+
+            </svg>
+
+            <span class="btn-print-format-label">Excel</span>
+
+          </button>
+
+        </div>
+
+        <button type="button" id="btn-print-complete" class="btn btn-primary btn-print-complete">Drucken & Abschließen</button>
+
+        <p class="panel-note">PDF und Excel drucken oder 3D-Ladeplan abschließen.</p>
+
+      </section>
+
+
+
+      <section class="panel">
+
+        <h2>Speichern</h2>
+
+        <div class="btn-row">
+
+          <button type="button" id="btn-save-plan" class="btn btn-primary">Speichern</button>
+
+          <button type="button" id="btn-load-json" class="btn">Plan laden</button>
+
+        </div>
+
+        <input type="file" id="file-import" accept=".json" class="hidden">
+
+      </section>
+
+    </aside>
+
+
+
+    <main class="main main-3d">
+
+      <div class="view-3d-workspace">
+
+        <div class="chart-panels-row chart-panels-row-3d">
+
+          <aside id="weight-bar-panel" class="usage-bar-panel" aria-label="Gesamtgewicht">
+
+            <h2 class="usage-bar-title">Gesamtgewicht</h2>
+
+            <div id="weight-bar-chart" class="usage-bar-chart"></div>
+
+          </aside>
+
+          <aside id="volume-bar-panel" class="usage-bar-panel" aria-label="Raumauslastung">
+
+            <h2 class="usage-bar-title">Raumauslastung</h2>
+
+            <div id="volume-bar-chart" class="usage-bar-chart"></div>
+
+          </aside>
+
+          <aside id="height-bar-panel" class="usage-bar-panel" aria-label="Stapelhöhe">
+
+            <h2 class="usage-bar-title">Stapelhöhe</h2>
+
+            <div id="height-bar-chart" class="usage-bar-chart"></div>
+
+          </aside>
+
+        </div>
+
+
+
+        <div class="view-3d-wrap">
+
+          <div class="view-3d-toolbar">
+
+            <span id="scale-info">Maßstab: —</span>
+
+            <span id="bed-info">Laderaum: —</span>
+
+            <span id="max-height-info" class="view-3d-max-height">Max. Ladehöhe: —</span>
+
+          </div>
+
+          <div class="view-3d-canvas-host">
+
+            <canvas id="ladeplan-3d-canvas"></canvas>
+
+            <div class="view-3d-footer">
+
+              <div class="canvas-footer-actions">
+
+                <button type="button" id="btn-canvas-export" class="btn-canvas-export" aria-label="Drucken" title="Drucken">
+
+                  <svg class="btn-canvas-export-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+
+                    <path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 10H6v-4h12v4zm1-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-2-5H7v3h10V5z"/>
+
+                  </svg>
+
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <p class="view-3d-hint">Linksklick + ziehen: verschieben · Auf Ladegut ziehen: stapeln · Freie Fläche: Ladeboden · Rechtsklick: Menü · R: drehen</p>
+
+        </div>
+
+
+
+        <aside id="cargo-detail-panel" class="cargo-detail-panel cargo-detail-panel-3d" aria-label="Ausgewähltes Ladegut">
+
+          <button type="button" id="btn-cargo-list" class="btn btn-primary btn-cargo-list">Ladung</button>
+
+          <h2 class="cargo-detail-title">Ausgewähltes Ladegut</h2>
+
+          <div id="cargo-detail-content" class="cargo-detail-content">
+
+            <div class="cargo-detail-card cargo-detail-card-empty">
+
+              <div class="cargo-detail-name cargo-detail-empty">Kein Ladegut ausgewählt</div>
+
+              <p class="cargo-detail-hint">Ladegut in der 3D-Ansicht anklicken.</p>
+
+            </div>
+
+          </div>
+
+          <div class="cargo-detail-actions btn-row">
+
+            <button type="button" id="btn-cargo-beladen" class="btn btn-cargo-beladen" disabled>Beladen:</button>
+
+            <button type="button" id="btn-rotate" class="btn" disabled>Drehen 90°</button>
+
+            <button type="button" id="btn-delete" class="btn btn-danger" disabled>Löschen</button>
+
+          </div>
+
+        </aside>
+
+      </div>
+
+    </main>
+
+  </div>
+
+
+
+  <div id="cargo-context-menu" class="context-menu hidden" role="menu">
+
+    <div id="context-menu-weight-row" class="context-menu-weight hidden">
+
+      <label for="context-menu-weight">Gewicht (kg)
+
+        <input type="number" id="context-menu-weight" min="0" max="50000" step="1" placeholder="eingeben">
+
+      </label>
+
+    </div>
+
+    <div id="context-menu-height-row" class="context-menu-weight hidden">
+
+      <label for="context-menu-height">Höhe (cm)
+
+        <input type="number" id="context-menu-height" min="10" max="300" step="1" placeholder="eingeben">
+
+      </label>
+
+    </div>
+
+    <button type="button" class="context-menu-item" data-action="undo" role="menuitem">Rückgängig</button>
+
+    <button type="button" class="context-menu-item" data-action="rotate" role="menuitem">Seitlich drehen 90°</button>
+
+    <button type="button" class="context-menu-item" data-action="beladen" role="menuitem">Beladen:</button>
+
+    <button type="button" class="context-menu-item" data-action="copy" role="menuitem">Duplizieren</button>
+
+    <button type="button" class="context-menu-item" data-action="delete" role="menuitem">Löschen</button>
+
+  </div>
+
+
+
+  <div id="cargo-list-dialog" class="export-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="cargo-list-dialog-title" data-purpose="view">
+
+    <div class="export-dialog-backdrop" id="cargo-list-dialog-backdrop"></div>
+
+    <div class="export-dialog-panel cargo-list-dialog-panel">
+
+      <h2 id="cargo-list-dialog-title">Ladung</h2>
+
+      <fieldset class="cargo-list-mode-fieldset">
+
+        <label><input type="radio" name="cargo-list-mode" value="plan"> Ladeplan (3D)</label>
+
+        <label><input type="radio" name="cargo-list-mode" value="list" checked> Ladegut</label>
+
+        <label><input type="radio" name="cargo-list-mode" value="both"> Ladegut + Beladung</label>
+
+        <label><input type="radio" name="cargo-list-mode" value="beladung"> Beladung</label>
+
+        <label><input type="radio" name="cargo-list-mode" value="all"> Alles</label>
+
+      </fieldset>
+
+      <div id="cargo-list-dialog-content" class="cargo-list-dialog-content"></div>
+
+      <div class="btn-row cargo-list-dialog-actions">
+
+        <button type="button" id="cargo-list-btn-pdf" class="btn btn-primary">Als PDF</button>
+
+        <button type="button" id="cargo-list-btn-excel" class="btn btn-primary">Als Excel</button>
+
+        <button type="button" id="cargo-list-btn-close" class="btn">Schließen</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="complete-plan-dialog" class="export-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="complete-plan-dialog-title">
+
+    <div class="export-dialog-backdrop" id="complete-plan-dialog-backdrop"></div>
+
+    <div class="export-dialog-panel complete-plan-dialog-panel">
+
+      <div id="complete-plan-step-formats" class="complete-plan-step">
+
+        <h2 id="complete-plan-dialog-title">Drucken & Abschließen</h2>
+
+        <fieldset class="complete-plan-mode-fieldset">
+
+          <label><input type="radio" name="complete-plan-mode" value="plan"> Ladeplan (3D)</label>
+
+          <label><input type="radio" name="complete-plan-mode" value="list"> Ladegut</label>
+
+          <label><input type="radio" name="complete-plan-mode" value="both"> Ladegut + Beladung</label>
+
+          <label><input type="radio" name="complete-plan-mode" value="beladung"> Beladung</label>
+
+          <label><input type="radio" name="complete-plan-mode" value="all" checked> Alles</label>
+
+        </fieldset>
+
+        <div class="complete-plan-print-actions">
+
+          <button type="button" id="complete-plan-btn-pdf" class="btn-print-format" data-format="pdf" aria-label="Als PDF drucken">
+
+            <svg class="btn-print-format-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 10H6v-4h12v4zm1-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-2-5H7v3h10V5z"/></svg>
+
+            <span class="btn-print-format-label">PDF</span>
+
+          </button>
+
+          <button type="button" id="complete-plan-btn-excel" class="btn-print-format" data-format="excel" aria-label="Als Excel drucken">
+
+            <svg class="btn-print-format-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 10H6v-4h12v4zm1-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-2-5H7v3h10V5z"/></svg>
+
+            <span class="btn-print-format-label">Excel</span>
+
+          </button>
+
+        </div>
+
+        <div class="btn-row complete-plan-dialog-actions">
+
+          <button type="button" id="complete-plan-btn-save" class="btn btn-primary">Speichern</button>
+
+          <button type="button" id="complete-plan-btn-cancel" class="btn">Abbrechen</button>
+
+        </div>
+
+      </div>
+
+      <div id="complete-plan-step-followup" class="complete-plan-step hidden">
+
+        <h2>Export abgeschlossen</h2>
+
+        <p id="complete-plan-followup-text" class="complete-plan-followup-text"></p>
+
+        <div class="btn-row complete-plan-dialog-actions">
+
+          <button type="button" id="complete-plan-btn-complete-only" class="btn btn-primary">Ladeplan abschließen</button>
+
+          <button type="button" id="complete-plan-btn-continue" class="btn">Weiter arbeiten</button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="canvas-print-dialog" class="export-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="canvas-print-dialog-title">
+
+    <div class="export-dialog-backdrop" id="canvas-print-dialog-backdrop"></div>
+
+    <div class="export-dialog-panel canvas-print-dialog-panel">
+
+      <h2 id="canvas-print-dialog-title">Drucken</h2>
+
+      <div class="complete-plan-print-actions canvas-print-dialog-actions">
+
+        <button type="button" id="canvas-print-btn-pdf" class="btn-print-format" aria-label="Als PDF drucken">
+
+          <svg class="btn-print-format-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 10H6v-4h12v4zm1-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-2-5H7v3h10V5z"/></svg>
+
+          <span class="btn-print-format-label">PDF</span>
+
+        </button>
+
+        <button type="button" id="canvas-print-btn-excel" class="btn-print-format" aria-label="Als Excel drucken">
+
+          <svg class="btn-print-format-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 8H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zm-1 10H6v-4h12v4zm1-8a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-2-5H7v3h10V5z"/></svg>
+
+          <span class="btn-print-format-label">Excel</span>
+
+        </button>
+
+      </div>
+
+      <div class="btn-row canvas-print-dialog-save-row">
+
+        <button type="button" id="canvas-print-btn-save" class="btn btn-primary">Speichern</button>
+
+        <button type="button" id="canvas-print-btn-cancel" class="btn">Schließen</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="save-plan-dialog" class="export-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="save-plan-dialog-title">
+
+    <div class="export-dialog-backdrop" id="save-plan-dialog-backdrop"></div>
+
+    <div class="export-dialog-panel save-plan-dialog-panel">
+
+      <h2 id="save-plan-dialog-title">Ladeplan speichern</h2>
+
+      <div class="btn-row save-plan-dialog-actions">
+
+        <button type="button" id="save-plan-btn-pdf" class="btn btn-primary">Als PDF</button>
+
+        <button type="button" id="save-plan-btn-excel" class="btn btn-primary">Als Excel</button>
+
+        <button type="button" id="save-plan-btn-json" class="btn btn-primary">Als JSON</button>
+
+        <button type="button" id="save-plan-btn-cancel" class="btn">Abbrechen</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="beladung-dialog" class="export-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="beladung-dialog-title">
+
+    <div class="export-dialog-backdrop" id="beladung-dialog-backdrop"></div>
+
+    <div class="export-dialog-panel beladung-dialog-panel">
+
+      <h2 id="beladung-dialog-title">Beladung</h2>
+
+      <p id="beladung-dialog-item-name" class="panel-note"></p>
+
+      <textarea id="beladung-dialog-input" rows="4" placeholder="z.B. Europaletten&#10;Schraubenkisten" aria-label="Beladung"></textarea>
+
+      <div class="btn-row beladung-dialog-actions">
+
+        <button type="button" id="beladung-dialog-save" class="btn btn-primary">Speichern</button>
+
+        <button type="button" id="beladung-dialog-cancel" class="btn">Schließen</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
+
+  <script src="../js/trucks.js"></script>
+
+  <script src="../js/packer3d.js"></script>
+
+  <script src="js/app-3d.js?v=5"></script>
+
+  <script src="js/export-3d.js?v=1"></script>
+  <script src="../../back.js"></script>
+
+</body>
+
+</html>
+
+

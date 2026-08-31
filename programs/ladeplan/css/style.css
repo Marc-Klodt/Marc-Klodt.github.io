@@ -61,6 +61,60 @@ body {
   min-width: 0;
 }
 
+.header-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.header-nav-3d-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  max-width: 22rem;
+}
+
+.header-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.header-nav-btn:hover {
+  background: #2d3a52;
+  border-color: #4b5f82;
+  color: #fff;
+}
+
+.header-nav-btn.is-active {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: #3b82f6;
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35), 0 4px 14px rgba(37, 99, 235, 0.25);
+  pointer-events: none;
+  cursor: default;
+}
+
+.header-nav-note {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+  max-width: 20rem;
+}
+
 .header h1 {
   font-size: 1.5rem;
   font-weight: 700;
