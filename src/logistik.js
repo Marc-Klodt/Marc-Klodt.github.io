@@ -53,13 +53,4 @@ const logistikPrograms = [
     type: "embed",
     url: "programs/lagerplanung/index.html",
   },
-  {
-    id: "logistik-eurojackpot",
-    name: "Eurojackpot",
-    description: "Wahrscheinlichkeitsrechner für alle Eurojackpot-Ziehungen seit 2012.",
-    iconUrl: "programs/eurojackpot/assets/euro-icon.png",
-    accent: "#ff1c40",
-    type: "embed",
-    url: "programs/eurojackpot/index.html",
-  },
 ];

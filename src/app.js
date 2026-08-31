@@ -570,7 +570,6 @@ const HASH_BY_ID = {
   "logistik-europalette": "europalettenschein",
   "logistik-stochastik": "stochastische-bedarfsanalyse",
   "logistik-lagerplanung": "lagerplanung",
-  "logistik-eurojackpot": "eurojackpot",
 };
 
 const ID_BY_HASH = {
@@ -580,7 +579,6 @@ const ID_BY_HASH = {
   europalettenschein: "logistik-europalette",
   "stochastische-bedarfsanalyse": "logistik-stochastik",
   lagerplanung: "logistik-lagerplanung",
-  eurojackpot: "logistik-eurojackpot",
 };
 
 function setProgramUrl(id) {
