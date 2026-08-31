@@ -6,7 +6,7 @@ const logistikPrograms = [
     iconUrl: "programs/ladeplan/icons/ladeplan.svg",
     accent: "#3b82f6",
     type: "embed",
-    url: "programs/ladeplan/index.html",
+    url: "programs/ladeplan/index.html?v=26",
   },
   {
     id: "logistik-abc",
