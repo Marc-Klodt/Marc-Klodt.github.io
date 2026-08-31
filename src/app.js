@@ -352,6 +352,12 @@ function renderPasswordPanel() {
     </div>`;
 }
 
+function embedSrc(url) {
+  if (!url) return "";
+  const sep = url.indexOf("?") >= 0 ? "&" : "?";
+  return url + sep + "cb=" + Date.now();
+}
+
 function renderWorkspace() {
   const p = ui.workspace;
   if (!p) return "";
@@ -359,7 +365,7 @@ function renderWorkspace() {
   if (p.type === "code") {
     body = `<iframe title="${escapeHtml(p.name)}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin"></iframe>`;
   } else if (p.type === "embed" && p.url) {
-    body = `<iframe title="${escapeHtml(p.name)}" src="${escapeHtml(p.url)}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups allow-downloads allow-top-navigation-by-user-activation"></iframe>`;
+    body = `<iframe title="${escapeHtml(p.name)}" src="${escapeHtml(embedSrc(p.url))}" sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups allow-downloads allow-top-navigation-by-user-activation"></iframe>`;
   } else {
     body = `<div class="link-fallback"><div><h2>${escapeHtml(p.name)}</h2><p><a href="${escapeHtml(p.url || "#")}" target="_blank" rel="noopener">${escapeHtml(p.url || "")}</a></p></div></div>`;
   }

@@ -1264,6 +1264,10 @@ namespace GoGiLock
             }
             string ext = Path.GetExtension(file).ToLowerInvariant();
             ctx.Response.ContentType = Mime(ext);
+            if (ext == ".html" || ext == ".js" || ext == ".css")
+            {
+                ctx.Response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            }
             byte[] bytes = File.ReadAllBytes(file);
             ctx.Response.ContentLength64 = bytes.Length;
             ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
