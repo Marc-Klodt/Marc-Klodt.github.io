@@ -3,6 +3,8 @@ const VehicleImages = (() => {
 
   const BASE = 'assets/vehicles/';
 
+  let assetBase = BASE;
+
   const IMAGE_BY_ID = {
     sprinter: 'sprinter.png',
     transporter_35t: 'transporter.png',
@@ -21,10 +23,14 @@ const VehicleImages = (() => {
     custom: 'generic.png',
   };
 
-  function getImageSrc(truckId) {
-    const file = IMAGE_BY_ID[truckId] || 'generic.png';
-    return BASE + file;
+  function setAssetBase(base) {
+    assetBase = base.endsWith('/') ? base : `${base}/`;
   }
 
-  return { getImageSrc };
+  function getImageSrc(truckId) {
+    const file = IMAGE_BY_ID[truckId] || 'generic.png';
+    return assetBase + file;
+  }
+
+  return { getImageSrc, setAssetBase };
 })();

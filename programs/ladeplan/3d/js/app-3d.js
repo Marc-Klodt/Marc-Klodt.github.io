@@ -6,6 +6,8 @@
 
   const GRID_M = 0.1;
 
+  const DRAG_THRESHOLD_PX = 5;
+
   const STORAGE_KEY = 'ladeplan-3d-state';
 
   const MAX_UNDO = 50;
@@ -27,6 +29,22 @@
   let undoStack = [];
 
   let dragUndoSnapshot = null;
+
+  let cornerOrbitActive = false;
+
+  let hoveredCornerIndex = null;
+
+  let cornerHandleMeshes = [];
+
+  let planGroup = null;
+
+  let xyzModeActive = false;
+
+  let positionModeActive = false;
+
+  let planPan = { x: 0, y: 0, z: 0 };
+
+  let positionDragState = null;
 
 
 
@@ -71,10 +89,6 @@
   const customMaxWeight = document.getElementById('custom-max-weight');
 
   const cargoPresets = document.getElementById('cargo-presets');
-
-  const cargoItemsList = document.getElementById('cargo-items-list');
-
-  const cargoItemsEmpty = document.getElementById('cargo-items-empty');
 
   const volumeInfo = document.getElementById('volume-info');
 
@@ -322,7 +336,141 @@
 
 
 
+  function createNotStackableMark(item) {
+
+    const hl = item.length / 2;
+
+    const hw = item.width / 2;
+
+    const hh = item.height / 2;
+
+    const insetL = Math.max(hl * 0.22, 0.03);
+
+    const insetW = Math.max(hw * 0.22, 0.03);
+
+    const insetH = Math.max(hh * 0.22, 0.03);
+
+    const eps = 0.01;
+
+    const pts = [];
+
+
+
+    const addFaceX = (a, b, c, d) => {
+
+      pts.push(new THREE.Vector3(...a), new THREE.Vector3(...b));
+
+      pts.push(new THREE.Vector3(...c), new THREE.Vector3(...d));
+
+    };
+
+
+
+    addFaceX(
+
+      [-hl + insetL, hh + eps, -hw + insetW],
+
+      [hl - insetL, hh + eps, hw - insetW],
+
+      [hl - insetL, hh + eps, -hw + insetW],
+
+      [-hl + insetL, hh + eps, hw - insetW],
+
+    );
+
+    addFaceX(
+
+      [-hl + insetL, -hh + insetH, hw + eps],
+
+      [hl - insetL, hh - insetH, hw + eps],
+
+      [hl - insetL, -hh + insetH, hw + eps],
+
+      [-hl + insetL, hh - insetH, hw + eps],
+
+    );
+
+    addFaceX(
+
+      [-hl + insetL, -hh + insetH, -hw - eps],
+
+      [hl - insetL, hh - insetH, -hw - eps],
+
+      [hl - insetL, -hh + insetH, -hw - eps],
+
+      [-hl + insetL, hh - insetH, -hw - eps],
+
+    );
+
+    addFaceX(
+
+      [hl + eps, -hh + insetH, -hw + insetW],
+
+      [hl + eps, hh - insetH, hw - insetW],
+
+      [hl + eps, -hh + insetH, hw - insetW],
+
+      [hl + eps, hh - insetH, -hw + insetW],
+
+    );
+
+    addFaceX(
+
+      [-hl - eps, -hh + insetH, -hw + insetW],
+
+      [-hl - eps, hh - insetH, hw - insetW],
+
+      [-hl - eps, -hh + insetH, hw - insetW],
+
+      [-hl - eps, hh - insetH, -hw + insetW],
+
+    );
+
+
+
+    const mark = new THREE.LineSegments(
+
+      new THREE.BufferGeometry().setFromPoints(pts),
+
+      new THREE.LineBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.95, depthTest: true }),
+
+    );
+
+    mark.userData = { itemId: item.id, role: 'not-stackable-mark' };
+
+    mark.renderOrder = 2;
+
+    return mark;
+
+  }
+
+
+
   function resolveItemStackZ(item) {
+
+    let supportZ = 0;
+
+    items.forEach((other) => {
+
+      if (other.id === item.id) return;
+
+      if (other.notStackable) return;
+
+      if (!overlapsXY(item, other)) return;
+
+      const top = other.z + other.height;
+
+      if (top > supportZ) supportZ = top;
+
+    });
+
+    return snap(supportZ);
+
+  }
+
+
+
+  function resolveItemStackZAll(item) {
 
     let supportZ = 0;
 
@@ -339,6 +487,100 @@
     });
 
     return snap(supportZ);
+
+  }
+
+
+
+  function getNotStackableStackAttempt(item) {
+
+    if (!item) return null;
+
+    const allowedZ = resolveItemStackZ(item);
+
+    const naturalZ = resolveItemStackZAll(item);
+
+    if (naturalZ <= allowedZ + EPS) return null;
+
+    let blockedBy = null;
+
+    let blockedTop = -1;
+
+    items.forEach((other) => {
+
+      if (other.id === item.id || !other.notStackable) return;
+
+      if (!overlapsXY(item, other)) return;
+
+      const top = snap(other.z + other.height);
+
+      if (top >= blockedTop && naturalZ >= top - EPS) {
+
+        blockedTop = top;
+
+        blockedBy = other;
+
+      }
+
+    });
+
+    return blockedBy;
+
+  }
+
+
+
+  function findActiveNotStackableStackAttempt() {
+
+    const item = dragState
+
+      ? findItemById(dragState.id)
+
+      : (selectedId ? findItemById(selectedId) : null);
+
+    if (!item) return null;
+
+    const blockedBy = getNotStackableStackAttempt(item);
+
+    return blockedBy ? { item, blockedBy } : null;
+
+  }
+
+
+
+  function reresolveStackingAfterSupportChange(changedItem) {
+
+    items.forEach((other) => {
+
+      if (other.id === changedItem.id) return;
+
+      if (!overlapsXY(other, changedItem)) return;
+
+      finalizeItemPlacement(other, { resolveStack: true });
+
+    });
+
+  }
+
+
+
+  function toggleItemNotStackable(itemId) {
+
+    const item = findItemById(itemId);
+
+    if (!item) return;
+
+    pushUndo();
+
+    item.notStackable = !item.notStackable;
+
+    reresolveStackingAfterSupportChange(item);
+
+    finalizeItemPlacement(item, { resolveStack: true });
+
+    selectedId = item.id;
+
+    updateUI();
 
   }
 
@@ -480,87 +722,41 @@
 
 
 
-  function updateCargoItemsList() {
+  function getPresetHeightFromInput(preset) {
 
-    if (!cargoItemsList) return;
+    const input = cargoPresets?.querySelector(`.preset-height-input[data-preset-id="${preset.id}"]`);
 
-    cargoItemsList.innerHTML = '';
+    const cm = parseFloat(input?.value);
 
-    if (cargoItemsEmpty) cargoItemsEmpty.hidden = items.length > 0;
+    if (Number.isFinite(cm) && cm > 0) return cm / 100;
 
-    items.forEach((item, index) => {
+    return preset.height || 1.0;
 
-      const row = document.createElement('div');
+  }
 
-      row.className = `cargo-item-row${item.id === selectedId ? ' selected' : ''}`;
 
-      row.dataset.id = item.id;
 
-      row.innerHTML = `
+  function updateUI() {
 
-        <div class="cargo-item-row-head">
+    updateStats();
 
-          <span class="cargo-item-swatch" style="background:${item.color || '#3b82f6'}"></span>
+    updateHeaderTruck();
 
-          <strong class="cargo-item-name">${itemLabel(item, index)}</strong>
+    updateCargoDetail();
 
-        </div>
+    VehiclePhotoPanel.update(getTruck());
 
-        <div class="cargo-item-dims">
+    drawScene();
 
-          <label>L<input type="number" class="cargo-dim-input" data-dim="length" min="10" max="1400" step="1" value="${(item.length * 100).toFixed(0)}"></label>
+    scheduleSave();
 
-          <label>B<input type="number" class="cargo-dim-input" data-dim="width" min="10" max="250" step="1" value="${(item.width * 100).toFixed(0)}"></label>
+  }
 
-          <label>H<input type="number" class="cargo-dim-input" data-dim="height" min="10" max="300" step="1" value="${(item.height * 100).toFixed(0)}"></label>
 
-          <label>kg<input type="number" class="cargo-dim-input" data-dim="weight" min="0" max="50000" step="1" value="${item.weight ?? ''}" placeholder="—"></label>
 
-        </div>`;
+  function getPresetHeight(preset) {
 
-      row.addEventListener('click', (e) => {
-
-        if (e.target.closest('.cargo-dim-input')) return;
-
-        selectedId = item.id;
-
-        updateUI();
-
-      });
-
-      row.querySelectorAll('.cargo-dim-input').forEach((input) => {
-
-        input.addEventListener('change', () => {
-
-          const dim = input.dataset.dim;
-
-          pushUndo();
-
-          if (dim === 'weight') {
-
-            const raw = input.value.trim();
-
-            item.weight = raw === '' ? null : parseFloat(raw);
-
-          } else {
-
-            const cm = parseFloat(input.value) || 0;
-
-            item[dim] = cm / 100;
-
-          }
-
-          finalizeItemPlacement(item, { resolveStack: dim === 'length' || dim === 'width' });
-
-          updateUI();
-
-        });
-
-      });
-
-      cargoItemsList.appendChild(row);
-
-    });
+    return getPresetHeightFromInput(preset);
 
   }
 
@@ -636,7 +832,7 @@
 
           <dt>Status</dt>
 
-          <dd>${colliding ? '⚠ Überlappung' : overH ? '⚠ über Innenhöhe' : 'OK'}</dd>
+          <dd>${colliding ? '⚠ Überlappung' : overH ? '⚠ über Innenhöhe' : item.notStackable ? 'Nicht stapelbar' : 'OK'}</dd>
 
           <dt>Beladung</dt>
 
@@ -806,11 +1002,21 @@
 
     contextMenu.style.top = `${Math.min(clientY, window.innerHeight - menuH - 8)}px`;
 
-    contextMenu.querySelectorAll('[data-action="copy"], [data-action="delete"], [data-action="rotate"], [data-action="beladen"]').forEach((btn) => {
+    contextMenu.querySelectorAll('[data-action="copy"], [data-action="delete"], [data-action="rotate"], [data-action="beladen"], [data-action="not-stackable"]').forEach((btn) => {
 
       btn.disabled = !itemId;
 
     });
+
+    const notStackableBtn = contextMenu.querySelector('[data-action="not-stackable"]');
+
+    if (notStackableBtn && itemId) {
+
+      const item = findItemById(itemId);
+
+      notStackableBtn.textContent = item?.notStackable ? 'Stapelbar machen' : 'Nicht stapelbar';
+
+    }
 
     updateUndoControls();
 
@@ -839,6 +1045,8 @@
     hideContextMenu();
 
     if (action === 'rotate') rotateItemById(id);
+
+    else if (action === 'not-stackable') toggleItemNotStackable(id);
 
     else if (action === 'beladen') openBeladungDialog(id);
 
@@ -980,6 +1188,472 @@
 
 
 
+  function buildCornerHandles(L, W, bedH) {
+
+    const group = new THREE.Group();
+
+    const corners = [
+
+      { x: 0, z: 0, dx: 1, dz: 1 },
+
+      { x: L, z: 0, dx: -1, dz: 1 },
+
+      { x: 0, z: W, dx: 1, dz: -1 },
+
+      { x: L, z: W, dx: -1, dz: -1 },
+
+    ];
+
+    const size = Math.min(0.14, L * 0.035, W * 0.035);
+
+    const arm = Math.min(0.4, L * 0.1, W * 0.1);
+
+    cornerHandleMeshes = [];
+
+    const addCornerSet = (yBase, indexOffset, isTop) => {
+
+      corners.forEach((c, i) => {
+
+        const index = indexOffset + i;
+
+        const markerMat = new THREE.MeshStandardMaterial({
+
+          color: isTop ? 0x60a5fa : 0x38bdf8,
+
+          emissive: isTop ? 0x38bdf8 : 0x0ea5e9,
+
+          emissiveIntensity: 0.35,
+
+          transparent: true,
+
+          opacity: 0.92,
+
+        });
+
+        const sphereY = isTop ? yBase - size * 1.8 : yBase + size * 1.8;
+
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(size, 14, 14), markerMat);
+
+        sphere.position.set(c.x, sphereY, c.z);
+
+        sphere.userData = { role: 'corner-handle', cornerIndex: index };
+
+        cornerHandleMeshes.push(sphere);
+
+        group.add(sphere);
+
+        const ring = new THREE.Mesh(
+
+          new THREE.TorusGeometry(size * 1.35, size * 0.18, 8, 20),
+
+          new THREE.MeshBasicMaterial({
+
+            color: isTop ? 0x93c5fd : 0x7dd3fc,
+
+            transparent: true,
+
+            opacity: 0.75,
+
+          }),
+
+        );
+
+        ring.rotation.x = Math.PI / 2;
+
+        ring.position.set(c.x, isTop ? yBase - 0.015 : yBase + 0.015, c.z);
+
+        ring.userData = { role: 'corner-handle', cornerIndex: index };
+
+        group.add(ring);
+
+        const lineMat = new THREE.LineBasicMaterial({
+
+          color: isTop ? 0x60a5fa : 0x38bdf8,
+
+          transparent: true,
+
+          opacity: 0.9,
+
+        });
+
+        const ax = c.x + c.dx * arm;
+
+        const az = c.z + c.dz * arm;
+
+        const bracketY = isTop ? yBase - 0.012 : yBase + 0.012;
+
+        const bracket = new THREE.Line(
+
+          new THREE.BufferGeometry().setFromPoints([
+
+            new THREE.Vector3(c.x, bracketY, c.z),
+
+            new THREE.Vector3(ax, bracketY, c.z),
+
+            new THREE.Vector3(c.x, bracketY, c.z),
+
+            new THREE.Vector3(c.x, bracketY, az),
+
+          ]),
+
+          lineMat,
+
+        );
+
+        bracket.userData = { role: 'corner-handle', cornerIndex: index };
+
+        group.add(bracket);
+
+      });
+
+    };
+
+    addCornerSet(0, 0, false);
+
+    addCornerSet(bedH, 4, true);
+
+    return group;
+
+  }
+
+
+
+  function getCornerIndexFromObject(obj) {
+
+    while (obj) {
+
+      if (obj.userData?.cornerIndex != null) return obj.userData.cornerIndex;
+
+      obj = obj.parent;
+
+    }
+
+    return null;
+
+  }
+
+
+
+  function setCornerHighlight(index) {
+
+    cornerHandleMeshes.forEach((mesh) => {
+
+      if (!mesh.material?.emissive) return;
+
+      const active = index != null && mesh.userData.cornerIndex === index;
+
+      mesh.material.emissiveIntensity = active ? 0.9 : 0.35;
+
+      mesh.material.opacity = active ? 1 : 0.92;
+
+    });
+
+    hoveredCornerIndex = index;
+
+  }
+
+
+
+  function createStirnWallFaceMaterial() {
+
+    const canvas = document.createElement('canvas');
+
+    canvas.width = 512;
+
+    canvas.height = 512;
+
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#22c55e';
+
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#000000';
+
+    ctx.font = 'bold 48px Segoe UI, sans-serif';
+
+    ctx.textAlign = 'center';
+
+    ctx.textBaseline = 'middle';
+
+    ctx.fillText('Stirnwand', canvas.width / 2, canvas.height / 2);
+
+    const map = new THREE.CanvasTexture(canvas);
+
+    map.needsUpdate = true;
+
+    return new THREE.MeshBasicMaterial({ map, side: THREE.FrontSide });
+
+  }
+
+
+
+  function addStirnWall(bedGroup, W, bedH) {
+
+    const innerFace = new THREE.Mesh(
+
+      new THREE.PlaneGeometry(W, bedH),
+
+      createStirnWallFaceMaterial(),
+
+    );
+
+    innerFace.position.set(0, bedH / 2, W / 2);
+
+    innerFace.rotation.y = Math.PI / 2;
+
+    bedGroup.add(innerFace);
+
+    const outerFace = new THREE.Mesh(
+
+      new THREE.PlaneGeometry(W, bedH),
+
+      createStirnWallFaceMaterial(),
+
+    );
+
+    outerFace.position.set(0, bedH / 2, W / 2);
+
+    outerFace.rotation.y = -Math.PI / 2;
+
+    bedGroup.add(outerFace);
+
+  }
+
+
+
+  function disableCornerOrbit() {
+
+    cornerOrbitActive = false;
+
+    if (controls) {
+
+      controls.mouseButtons.LEFT = null;
+
+    }
+
+  }
+
+
+
+  function enableCornerOrbit() {
+
+    cornerOrbitActive = true;
+
+    if (controls) {
+
+      controls.enabled = true;
+
+      controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+
+    }
+
+  }
+
+
+
+  function updateModeButtons() {
+
+    const btnXyz = document.getElementById('btn-mode-xyz');
+
+    const btnPos = document.getElementById('btn-mode-position');
+
+    if (btnXyz) {
+
+      btnXyz.textContent = xyzModeActive ? 'X Y Z aus' : 'X Y Z ein';
+
+      btnXyz.classList.toggle('is-active', xyzModeActive);
+
+      btnXyz.classList.toggle('is-sibling-active', !xyzModeActive && positionModeActive);
+
+      btnXyz.setAttribute('aria-pressed', xyzModeActive ? 'true' : 'false');
+
+    }
+
+    if (btnPos) {
+
+      btnPos.textContent = positionModeActive ? 'Position aus' : 'Position ein';
+
+      btnPos.classList.toggle('is-active', positionModeActive);
+
+      btnPos.classList.toggle('is-sibling-active', !positionModeActive && xyzModeActive);
+
+      btnPos.setAttribute('aria-pressed', positionModeActive ? 'true' : 'false');
+
+    }
+
+  }
+
+
+
+  function toggleXyzMode() {
+
+    xyzModeActive = !xyzModeActive;
+
+    if (xyzModeActive) {
+
+      positionModeActive = false;
+
+    }
+
+    disableCornerOrbit();
+
+    setCornerHighlight(null);
+
+    updateModeButtons();
+
+    drawScene();
+
+    updateCanvasCursorForMode();
+
+  }
+
+
+
+  function togglePositionMode() {
+
+    positionModeActive = !positionModeActive;
+
+    if (positionModeActive) {
+
+      xyzModeActive = false;
+
+      disableCornerOrbit();
+
+      setCornerHighlight(null);
+
+    }
+
+    updateModeButtons();
+
+    drawScene();
+
+    updateCanvasCursorForMode();
+
+  }
+
+
+
+  function updateCanvasCursorForMode() {
+
+    if (positionModeActive) setCanvasCursor('move');
+
+    else if (xyzModeActive) setCanvasCursor('default');
+
+    else setCanvasCursor(items.length ? 'grab' : 'default');
+
+  }
+
+
+
+  function panPlanByScreenDelta(dx, dy) {
+
+    if (!camera || !controls || !planGroup) return;
+
+    const offset = new THREE.Vector3().copy(camera.position).sub(controls.target);
+
+    const dist = offset.length();
+
+    const panLeft = new THREE.Vector3().crossVectors(camera.up, offset).normalize();
+
+    const factor = dist * 0.0012;
+
+    planPan.x += (panLeft.x * dx - camera.up.x * dy) * factor;
+
+    planPan.y += (panLeft.y * dx - camera.up.y * dy) * factor;
+
+    planPan.z += (panLeft.z * dx - camera.up.z * dy) * factor;
+
+    planGroup.position.set(planPan.x, planPan.y, planPan.z);
+
+  }
+
+
+
+  function bindPositionDocumentListeners() {
+
+    if (bindPositionDocumentListeners.bound) return;
+
+    bindPositionDocumentListeners.bound = true;
+
+    document.addEventListener('pointermove', onPositionPointerMove);
+
+    document.addEventListener('pointerup', onPositionPointerUp);
+
+    document.addEventListener('pointercancel', onPositionPointerUp);
+
+  }
+
+
+
+  function unbindPositionDocumentListeners() {
+
+    if (!bindPositionDocumentListeners.bound) return;
+
+    bindPositionDocumentListeners.bound = false;
+
+    document.removeEventListener('pointermove', onPositionPointerMove);
+
+    document.removeEventListener('pointerup', onPositionPointerUp);
+
+    document.removeEventListener('pointercancel', onPositionPointerUp);
+
+  }
+
+
+
+  function onPositionPointerMove(event) {
+
+    if (!positionDragState) return;
+
+    event.preventDefault();
+
+    panPlanByScreenDelta(
+
+      event.clientX - positionDragState.lastClientX,
+
+      event.clientY - positionDragState.lastClientY,
+
+    );
+
+    positionDragState.lastClientX = event.clientX;
+
+    positionDragState.lastClientY = event.clientY;
+
+  }
+
+
+
+  function finishPositionDrag(event) {
+
+    if (!positionDragState) return;
+
+    positionDragState = null;
+
+    if (controls) controls.enabled = true;
+
+    unbindPositionDocumentListeners();
+
+    updateCanvasCursorForMode();
+
+    if (canvas && event?.pointerId != null) {
+
+      try { canvas.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+
+    }
+
+  }
+
+
+
+  function onPositionPointerUp(event) {
+
+    finishPositionDrag(event);
+
+  }
+
+
+
   function initThree() {
 
     if (!canvas || typeof THREE === 'undefined') return;
@@ -1020,6 +1694,8 @@
 
     controls.target.set(3, 1.2, 1.2);
 
+    controls.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: null };
+
 
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.55));
@@ -1042,9 +1718,15 @@
 
     cargoGroup = new THREE.Group();
 
-    scene.add(bedGroup);
+    planGroup = new THREE.Group();
 
-    scene.add(cargoGroup);
+    planGroup.add(bedGroup);
+
+    planGroup.add(cargoGroup);
+
+    planGroup.position.set(planPan.x, planPan.y, planPan.z);
+
+    scene.add(planGroup);
 
 
 
@@ -1059,6 +1741,12 @@
     initDragHandlers();
 
     initContextMenuHandlers();
+
+    document.getElementById('btn-mode-xyz')?.addEventListener('click', toggleXyzMode);
+
+    document.getElementById('btn-mode-position')?.addEventListener('click', togglePositionMode);
+
+    updateModeButtons();
 
     animate();
 
@@ -1082,6 +1770,8 @@
 
     renderer.setSize(w, h, false);
 
+    VehiclePhotoPanel.resize();
+
   }
 
 
@@ -1098,23 +1788,47 @@
 
 
 
+  function disposeThreeObject(object) {
+
+    object.traverse((node) => {
+
+      if (node.geometry) node.geometry.dispose();
+
+      if (node.material) {
+
+        if (Array.isArray(node.material)) node.material.forEach((m) => {
+
+          if (m.map) m.map.dispose();
+
+          m.dispose();
+
+        });
+
+        else {
+
+          if (node.material.map) node.material.map.dispose();
+
+          node.material.dispose();
+
+        }
+
+      }
+
+    });
+
+  }
+
+
+
   function clearGroup(group) {
 
     while (group.children.length) {
 
       const child = group.children[0];
 
+      disposeThreeObject(child);
+
       group.remove(child);
-
-      if (child.geometry) child.geometry.dispose();
-
-      if (child.material) {
-
-        if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
-
-        else child.material.dispose();
-
-      }
 
     }
 
@@ -1143,6 +1857,8 @@
       scaleInfo.textContent = 'Bitte Fahrzeug wählen';
 
       if (maxHeightInfo) maxHeightInfo.textContent = 'Max. Ladehöhe: —';
+
+      cornerHandleMeshes = [];
 
       return;
 
@@ -1206,19 +1922,15 @@
 
 
 
-    const stirn = new THREE.Mesh(
+    addStirnWall(bedGroup, W, bedH);
 
-      new THREE.PlaneGeometry(W, bedH),
 
-      new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.12, side: THREE.DoubleSide }),
 
-    );
+    if (xyzModeActive) {
 
-    stirn.position.set(0, bedH / 2, W / 2);
+      bedGroup.add(buildCornerHandles(L, W, bedH));
 
-    stirn.rotation.y = Math.PI / 2;
-
-    bedGroup.add(stirn);
+    }
 
 
 
@@ -1304,15 +2016,19 @@
 
       cargoGroup.add(edge);
 
+      if (item.notStackable) mesh.add(createNotStackableMark(item));
+
     });
 
 
 
     updateCollisionVisuals();
 
-    setCanvasCursor(items.length ? 'grab' : 'default');
+    updateCanvasCursorForMode();
 
     if (!dragState) controls.target.set(L * 0.45, bedH * 0.35, W / 2);
+
+    if (planGroup) planGroup.position.set(planPan.x, planPan.y, planPan.z);
 
   }
 
@@ -1349,6 +2065,32 @@
         return { itemId: mesh.userData.itemId, point: hits[i].point };
 
       }
+
+    }
+
+    return null;
+
+  }
+
+
+
+  function pickCornerHandle(event) {
+
+    if (!raycaster || !camera || !bedGroup) return null;
+
+    getPointerNdc(event);
+
+    raycaster.setFromCamera(pointerNdc, camera);
+
+    raycaster.params.Line = { threshold: 0.12 };
+
+    const hits = raycaster.intersectObjects(bedGroup.children, true);
+
+    for (let i = 0; i < hits.length; i += 1) {
+
+      const idx = getCornerIndexFromObject(hits[i].object);
+
+      if (idx != null) return { cornerIndex: idx, point: hits[i].point };
 
     }
 
@@ -1518,9 +2260,15 @@
 
     const item = findItemById(dragState.id);
 
-    if (item) finalizeItemPlacement(item, { resolveStack: true });
+    const didMove = dragState.moved;
 
-    if (dragUndoSnapshot && dragState) {
+    if (item && didMove) {
+
+      finalizeItemPlacement(item, { resolveStack: true });
+
+    }
+
+    if (dragUndoSnapshot && dragState && didMove) {
 
       const movedItem = findItemById(dragState.id);
 
@@ -1544,11 +2292,17 @@
 
       dragUndoSnapshot = null;
 
+    } else {
+
+      dragUndoSnapshot = null;
+
     }
 
     dragState = null;
 
     if (controls) controls.enabled = true;
+
+    disableCornerOrbit();
 
     unbindDragDocumentListeners();
 
@@ -1562,6 +2316,8 @@
 
     drawScene();
 
+    updateStats();
+
     scheduleSave();
 
   }
@@ -1571,6 +2327,18 @@
   function onDocumentPointerMove(event) {
 
     if (!dragState) return;
+
+    const dx = event.clientX - dragState.startClientX;
+
+    const dy = event.clientY - dragState.startClientY;
+
+    if (!dragState.moved) {
+
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+
+      dragState.moved = true;
+
+    }
 
     event.preventDefault();
 
@@ -1606,6 +2374,8 @@
 
       event.stopImmediatePropagation();
 
+      disableCornerOrbit();
+
       selectedId = pick.itemId;
 
       const item = findItemById(pick.itemId);
@@ -1618,7 +2388,21 @@
 
       const ref = floorHit || pick.point;
 
-      dragState = { id: pick.itemId, offsetX: ref.x - pos.x, offsetZ: ref.z - pos.z };
+      dragState = {
+
+        id: pick.itemId,
+
+        offsetX: ref.x - pos.x,
+
+        offsetZ: ref.z - pos.z,
+
+        startClientX: event.clientX,
+
+        startClientY: event.clientY,
+
+        moved: false,
+
+      };
 
       dragUndoSnapshot = cloneStateForUndo();
 
@@ -1637,6 +2421,86 @@
       return;
 
     }
+
+
+
+    const cornerPick = xyzModeActive ? pickCornerHandle(event) : null;
+
+    if (cornerPick) {
+
+      enableCornerOrbit();
+
+      setCornerHighlight(cornerPick.cornerIndex);
+
+      setCanvasCursor('grab');
+
+      return;
+
+    }
+
+
+
+    if (positionModeActive) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      event.stopImmediatePropagation();
+
+      disableCornerOrbit();
+
+      positionDragState = {
+
+        lastClientX: event.clientX,
+
+        lastClientY: event.clientY,
+
+      };
+
+      if (controls) controls.enabled = false;
+
+      bindPositionDocumentListeners();
+
+      setCanvasCursor('grabbing');
+
+      try { canvas.setPointerCapture(event.pointerId); } catch { /* ignore */ }
+
+      selectedId = null;
+
+      updateCollisionVisuals();
+
+      updateCargoDetail();
+
+      return;
+
+    }
+
+
+
+    if (xyzModeActive) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      event.stopImmediatePropagation();
+
+      disableCornerOrbit();
+
+      selectedId = null;
+
+      updateCollisionVisuals();
+
+      updateCargoDetail();
+
+      return;
+
+    }
+
+
+
+    disableCornerOrbit();
 
     selectedId = null;
 
@@ -1683,6 +2547,58 @@
     canvas.addEventListener('contextmenu', onCanvasContextMenu);
 
     canvas.addEventListener('dblclick', onCanvasDblClick);
+
+    canvas.addEventListener('pointermove', (event) => {
+
+      if (dragState || cornerOrbitActive || positionDragState) return;
+
+      if (!xyzModeActive) {
+
+        setCornerHighlight(null);
+
+        updateCanvasCursorForMode();
+
+        return;
+
+      }
+
+      const corner = pickCornerHandle(event);
+
+      if (corner) {
+
+        setCornerHighlight(corner.cornerIndex);
+
+        setCanvasCursor('grab');
+
+      } else {
+
+        setCornerHighlight(null);
+
+        updateCanvasCursorForMode();
+
+      }
+
+    });
+
+    canvas.addEventListener('pointerup', () => {
+
+      if (!dragState) {
+
+        disableCornerOrbit();
+
+        finishPositionDrag({});
+
+        if (!xyzModeActive) setCornerHighlight(null);
+
+      }
+
+    });
+
+    canvas.addEventListener('pointerleave', () => {
+
+      if (!cornerOrbitActive) setCornerHighlight(null);
+
+    });
 
     document.addEventListener('keydown', (event) => {
 
@@ -1836,7 +2752,15 @@
 
     if (collisionInfo) {
 
-      if (colliding.size > 0) {
+      const stackAttempt = findActiveNotStackableStackAttempt();
+
+      if (stackAttempt) {
+
+        collisionInfo.className = 'stat-info warning';
+
+        collisionInfo.innerHTML = '<strong>⚠ Nicht stapelbar</strong>';
+
+      } else if (colliding.size > 0) {
 
         collisionInfo.className = 'stat-info warning';
 
@@ -1892,36 +2816,6 @@
 
 
 
-  function updateUI() {
-
-    updateStats();
-
-    updateHeaderTruck();
-
-    updateCargoItemsList();
-
-    updateCargoDetail();
-
-    drawScene();
-
-    scheduleSave();
-
-  }
-
-
-
-  function getPresetHeight(preset) {
-
-    const override = parseFloat(document.getElementById('preset-default-height')?.value);
-
-    if (Number.isFinite(override) && override > 0) return override / 100;
-
-    return preset.height || 1.0;
-
-  }
-
-
-
   function addCargoFromPreset(preset, qty = 1) {
 
     const truck = getTruck();
@@ -1957,6 +2851,8 @@
         rotation: 0,
 
         beladung: [],
+
+        notStackable: false,
 
       });
 
@@ -2010,7 +2906,7 @@
 
         color: nextColor(), weight: Number.isFinite(weight) ? weight : null,
 
-        customDimensions: true, rotation: 0, beladung: [],
+        customDimensions: true, rotation: 0, beladung: [], notStackable: false,
 
       });
 
@@ -2024,13 +2920,37 @@
 
 
 
-  function runAutoPack() {
+  function openAutoPackDialog() {
 
     const truck = getTruck();
 
     if (!truck) { alert('Bitte zuerst ein Fahrzeug wählen.'); return; }
 
     if (!items.length) { alert('Kein Ladegut vorhanden.'); return; }
+
+    document.getElementById('auto-pack-dialog')?.classList.remove('hidden');
+
+  }
+
+
+
+  function closeAutoPackDialog() {
+
+    document.getElementById('auto-pack-dialog')?.classList.add('hidden');
+
+  }
+
+
+
+  function runAutoPack(packMode) {
+
+    const truck = getTruck();
+
+    if (!truck) { alert('Bitte zuerst ein Fahrzeug wählen.'); return; }
+
+    if (!items.length) { alert('Kein Ladegut vorhanden.'); return; }
+
+    closeAutoPackDialog();
 
     pushUndo();
 
@@ -2043,6 +2963,8 @@
       gridStep: document.getElementById('snap-grid').checked ? GRID_M : 0,
 
       maxWeight: document.getElementById('auto-respect-weight').checked ? truck.maxWeight : Infinity,
+
+      packMode: packMode === 'floor' ? 'floor' : 'stack',
 
     });
 
@@ -2060,17 +2982,23 @@
 
     const pct = (result.utilization * 100).toFixed(1);
 
+    const floorPct = ((result.floorUtilization || 0) * 100).toFixed(1);
+
+    const stackedCount = result.placed.filter((p) => p.z > EPS).length;
+
+    const modeLabel = packMode === 'floor' ? 'Ladefläche' : 'Stapeln';
+
     if (result.unplaced.length > 0) {
 
       autoResult.className = 'stat-info warning';
 
-      autoResult.innerHTML = `<strong>${result.placedCount} platziert</strong><br>${pct}% Raum · ${result.unplaced.length} passen nicht`;
+      autoResult.innerHTML = `<strong>${result.placedCount} platziert (${modeLabel})</strong><br>${pct}% Raum · ${floorPct}% Ladefläche · ${stackedCount} gestapelt · ${result.unplaced.length} passen nicht`;
 
     } else {
 
       autoResult.className = 'stat-info ok';
 
-      autoResult.innerHTML = `<strong>3D-Plan erstellt</strong><br>${result.placedCount} Ladegüter · ${pct}% Raum`;
+      autoResult.innerHTML = `<strong>3D-Plan erstellt (${modeLabel})</strong><br>${result.placedCount} Ladegüter · ${pct}% Raum · ${floorPct}% Ladefläche · ${stackedCount} gestapelt`;
 
     }
 
@@ -2084,7 +3012,13 @@
 
     if (!renderer || !scene || !camera) return null;
 
+    const previousBackground = scene.background;
+
+    scene.background = new THREE.Color(0xffffff);
+
     renderer.render(scene, camera);
+
+    scene.background = previousBackground;
 
     const exportCanvas = document.createElement('canvas');
 
@@ -2096,11 +3030,11 @@
 
     const truck = getTruck();
 
-    ctx.fillStyle = '#0a0f18';
+    ctx.fillStyle = '#ffffff';
 
     ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
-    ctx.fillStyle = '#e2e8f0';
+    ctx.fillStyle = '#0f172a';
 
     ctx.font = 'bold 22px Segoe UI, system-ui, sans-serif';
 
@@ -2252,6 +3186,8 @@
 
       beladung: normalizeBeladung(item.beladung),
 
+      notStackable: !!item.notStackable,
+
     }));
 
     colorIndex = data.colorIndex || 0;
@@ -2320,19 +3256,29 @@
 
     CARGO_PRESETS.forEach((preset) => {
 
-      const btn = document.createElement('button');
+      const card = document.createElement('div');
 
-      btn.type = 'button';
+      card.className = 'preset-card';
 
-      btn.className = 'preset-btn';
-
-      btn.style.borderLeftColor = preset.color;
+      card.style.borderLeftColor = preset.color;
 
       const hCm = ((preset.height || 1) * 100).toFixed(0);
 
-      btn.innerHTML = `<strong>${preset.name}</strong><span>${(preset.length * 100).toFixed(0)}×${(preset.width * 100).toFixed(0)}×${hCm} cm</span>`;
+      card.innerHTML = `
 
-      btn.addEventListener('click', () => {
+        <strong class="preset-card-name">${preset.name}</strong>
+
+        <span class="preset-card-dims">${(preset.length * 100).toFixed(0)} × ${(preset.width * 100).toFixed(0)} cm</span>
+
+        <label class="preset-height-label">H (cm)
+
+          <input type="number" class="preset-height-input" data-preset-id="${preset.id}" min="10" max="300" step="1" value="${hCm}" aria-label="Höhe ${preset.name} in cm">
+
+        </label>
+
+        <button type="button" class="btn preset-card-add">Platzieren</button>`;
+
+      card.querySelector('.preset-card-add').addEventListener('click', () => {
 
         const qty = parseInt(document.getElementById('cargo-qty').value, 10) || 1;
 
@@ -2340,7 +3286,9 @@
 
       });
 
-      cargoPresets.appendChild(btn);
+      card.querySelector('.preset-height-input')?.addEventListener('click', (e) => e.stopPropagation());
+
+      cargoPresets.appendChild(card);
 
     });
 
@@ -2392,6 +3340,8 @@
 
     initPresets();
 
+    VehiclePhotoPanel.init({ assetBase: '../assets/vehicles/' });
+
     loadState();
 
     initThree();
@@ -2400,7 +3350,15 @@
 
     document.getElementById('btn-add-cargo')?.addEventListener('click', addCustomCargo);
 
-    document.getElementById('btn-auto-pack')?.addEventListener('click', runAutoPack);
+    document.getElementById('btn-auto-pack')?.addEventListener('click', openAutoPackDialog);
+
+    document.getElementById('auto-pack-mode-stack')?.addEventListener('click', () => runAutoPack('stack'));
+
+    document.getElementById('auto-pack-mode-floor')?.addEventListener('click', () => runAutoPack('floor'));
+
+    document.getElementById('auto-pack-dialog-cancel')?.addEventListener('click', closeAutoPackDialog);
+
+    document.getElementById('auto-pack-dialog-backdrop')?.addEventListener('click', closeAutoPackDialog);
 
     document.getElementById('btn-clear')?.addEventListener('click', () => {
 

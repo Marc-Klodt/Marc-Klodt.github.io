@@ -4,12 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ladeplan 2D – LKW Beladungsplaner</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <link rel="icon" href="icons/ladeplan.ico?v=12" sizes="32x32">
   <link rel="icon" href="icons/ladeplan.svg?v=12" type="image/svg+xml">
   <link rel="shortcut icon" href="icons/ladeplan.ico?v=12">
-  <link rel="stylesheet" href="css/style.css?v=26">
-  <link rel="stylesheet" href="css/panel-ads.css?v=26">
+  <link rel="stylesheet" href="css/style.css?v=28">
+  <link rel="stylesheet" href="css/panel-ads.css?v=28">
   <link rel="stylesheet" href="../back.css">
 </head>
 <body>
@@ -20,7 +19,7 @@
         <img src="icons/ladeplan.svg?v=12" alt="" class="header-logo" width="44" height="44">
         <div class="header-brand-text">
           <nav class="header-nav" aria-label="Ladeplan Versionen">
-            <a href="plan-2d.html" class="header-nav-btn is-active" aria-current="page">Ladeplan 2D</a>
+            <a href="index.html" class="header-nav-btn is-active" aria-current="page">Ladeplan 2D</a>
             <div class="header-nav-3d-wrap">
               <a href="3d/index.html" class="header-nav-btn">Ladeplan 3D</a>
               <p class="header-nav-note">Dreidimensionaler Beladungsplaner mit Höhenberechnung für Standard- und eigenes Ladegut</p>
@@ -33,7 +32,9 @@
     </div>
   </header>
 
-  <div class="app">
+  <div class="app" id="app-layout">
+    <div class="panel-column panel-column--left" id="panel-column-left">
+      <div class="panel-column__content">
     <aside class="sidebar">
       <section id="vehicle-panel" class="panel">
         <h2>Fahrzeug</h2>
@@ -165,6 +166,9 @@
         <p class="panel-note">Beim Speichern werden Format und Speicherort abgefragt. Pläne werden zusätzlich automatisch im Browser zwischengespeichert.</p>
       </section>
     </aside>
+      </div>
+      <button type="button" class="panel-toggle-rail" id="toggle-left-panel" aria-controls="panel-column-left" aria-expanded="true" aria-label="Linkes Menü ausblenden" title="Menü ein/aus"></button>
+    </div>
 
     <main class="canvas-area">
       <div class="canvas-workspace">
@@ -214,6 +218,9 @@
       </div>
       </div>
 
+      <div class="panel-column panel-column--right" id="panel-column-right">
+        <button type="button" class="panel-toggle-rail" id="toggle-right-panel" aria-controls="panel-column-right" aria-expanded="true" aria-label="Rechtes Menü ausblenden" title="Menü ein/aus"></button>
+        <div class="panel-column__content">
       <div class="side-panels">
         <aside id="vehicle-photo-panel" class="vehicle-photo-panel" aria-label="Fahrzeug – Referenzbild">
           <h2 class="vehicle-photo-title">Fahrzeug – Referenzbild</h2>
@@ -260,6 +267,8 @@
             </div>
           </div>
         </aside>
+      </div>
+        </div>
       </div>
     </main>
   </div>
@@ -505,9 +514,20 @@
   <script src="js/trucks.js"></script>
   <script src="js/packer.js?v=3"></script>
   <script src="js/vehicle-images.js"></script>
+  <script src="js/vehicle-photo.js"></script>
   <script src="js/ad-slots.js"></script>
   <script src="js/panel-ads.js"></script>
-  <script src="js/app.js?v=97"></script>
+  <script src="js/panel-toggles.js"></script>
+  <script src="js/app.js?v=102"></script>
+  <script>
+    initLadeplanPanelToggles({
+      appId: 'app-layout',
+      columns: [
+        { columnId: 'panel-column-left', toggleId: 'toggle-left-panel', side: 'left', storageKey: '2d-left' },
+        { columnId: 'panel-column-right', toggleId: 'toggle-right-panel', side: 'right', storageKey: '2d-right' },
+      ],
+    });
+  </script>
   <script src="../back.js"></script>
 </body>
 </html>

@@ -14,9 +14,9 @@
 
   <link rel="icon" href="../icons/ladeplan.svg?v=12" type="image/svg+xml">
 
-  <link rel="stylesheet" href="../css/style.css?v=26">
+  <link rel="stylesheet" href="../css/style.css?v=28">
 
-  <link rel="stylesheet" href="css/style-3d.css?v=26">
+  <link rel="stylesheet" href="css/style-3d.css?v=28">
   <link rel="stylesheet" href="../../back.css">
 
 </head>
@@ -30,7 +30,7 @@
 
       <div class="header-brand">
 
-        <a href="../plan-2d.html" aria-label="Ladeplan Start">
+        <a href="../index.html" aria-label="Ladeplan Start">
 
           <img src="../icons/ladeplan.svg?v=12" alt="" class="header-logo" width="44" height="44">
 
@@ -40,7 +40,7 @@
 
           <nav class="header-nav" aria-label="Ladeplan Versionen">
 
-            <a href="../plan-2d.html" class="header-nav-btn">Ladeplan 2D</a>
+            <a href="../index.html" class="header-nav-btn">Ladeplan 2D</a>
 
             <div class="header-nav-3d-wrap">
 
@@ -66,7 +66,11 @@
 
 
 
-  <div class="app app-3d">
+  <div class="app app-3d" id="app-layout">
+
+    <div class="panel-column panel-column--left" id="panel-column-left">
+
+      <div class="panel-column__content">
 
     <aside class="sidebar">
 
@@ -122,11 +126,7 @@
 
         </label>
 
-        <label>Standard-Höhe für Presets (cm)
-
-          <input type="number" id="preset-default-height" min="10" max="300" step="1" value="100" title="Wird beim Hinzufügen aus Presets verwendet, kann pro Ladegut später geändert werden">
-
-        </label>
+        <p class="panel-note">Höhe (cm) direkt in den Auswahlkästchen einstellen.</p>
 
         <div class="preset-grid" id="cargo-presets"></div>
 
@@ -162,29 +162,17 @@
 
       <section class="panel">
 
-        <h2>Ladegut im Plan</h2>
-
-        <p class="panel-note">Höhe, Gewicht und Maße pro Ladegut individuell anpassbar.</p>
-
-        <div id="cargo-items-list" class="cargo-items-list"></div>
-
-        <p id="cargo-items-empty" class="panel-note">Noch kein Ladegut im Plan.</p>
-
-      </section>
-
-
-
-      <section class="panel">
-
         <h2>Automatischer Ladeplan</h2>
 
         <label class="checkbox-label">
 
           <input type="checkbox" id="auto-rotate" checked>
 
-          Drehung erlauben (90° in Draufsicht)
+          Drehung erlauben (90° · optimale Auslastung)
 
         </label>
+
+        <p class="panel-note">Beim Erstellen wählen Sie: automatisch stapeln oder Ladefläche voll bestücken. „Nicht stapelbar“ wird beachtet.</p>
 
         <label class="checkbox-label">
 
@@ -306,6 +294,12 @@
 
     </aside>
 
+      </div>
+
+      <button type="button" class="panel-toggle-rail" id="toggle-left-panel" aria-controls="panel-column-left" aria-expanded="true" aria-label="Linkes Menü ausblenden" title="Menü ein/aus"></button>
+
+    </div>
+
 
 
     <main class="main main-3d">
@@ -352,6 +346,14 @@
 
             <span id="max-height-info" class="view-3d-max-height">Max. Ladehöhe: —</span>
 
+            <div class="view-3d-mode-buttons">
+
+              <button type="button" id="btn-mode-xyz" class="btn view-3d-mode-btn" aria-pressed="false">X Y Z ein</button>
+
+              <button type="button" id="btn-mode-position" class="btn view-3d-mode-btn" aria-pressed="false">Position ein</button>
+
+            </div>
+
           </div>
 
           <div class="view-3d-canvas-host">
@@ -378,11 +380,37 @@
 
           </div>
 
-          <p class="view-3d-hint">Linksklick + ziehen: verschieben · Auf Ladegut ziehen: stapeln · Freie Fläche: Ladeboden · Rechtsklick: Menü · R: drehen</p>
+          <p class="view-3d-hint">Ladegut: Linksklick ziehen · X Y Z ein: Drehen an Ecken · Position ein: Grundriss verschieben · Rechtsklick: Menü</p>
 
         </div>
 
 
+
+        <div class="panel-column panel-column--right panel-column--3d" id="panel-column-right">
+
+          <button type="button" class="panel-toggle-rail" id="toggle-right-panel" aria-controls="panel-column-right" aria-expanded="true" aria-label="Rechtes Menü ausblenden" title="Menü ein/aus"></button>
+
+          <div class="panel-column__content">
+
+          <div class="side-panels side-panels-3d">
+
+            <aside id="vehicle-photo-panel" class="vehicle-photo-panel" aria-label="Fahrzeug – Referenzbild">
+
+              <h2 class="vehicle-photo-title">Fahrzeug – Referenzbild</h2>
+
+              <figure class="vehicle-photo-wrap">
+
+                <div id="vehicle-photo-frame" class="vehicle-photo-frame">
+
+                  <img id="vehicle-photo" class="vehicle-photo" src="" alt="">
+
+                </div>
+
+                <figcaption id="vehicle-photo-caption" class="vehicle-photo-caption"></figcaption>
+
+              </figure>
+
+            </aside>
 
         <aside id="cargo-detail-panel" class="cargo-detail-panel cargo-detail-panel-3d" aria-label="Ausgewähltes Ladegut">
 
@@ -413,6 +441,12 @@
           </div>
 
         </aside>
+
+          </div>
+
+          </div>
+
+        </div>
 
       </div>
 
@@ -447,6 +481,8 @@
     <button type="button" class="context-menu-item" data-action="undo" role="menuitem">Rückgängig</button>
 
     <button type="button" class="context-menu-item" data-action="rotate" role="menuitem">Seitlich drehen 90°</button>
+
+    <button type="button" class="context-menu-item" data-action="not-stackable" role="menuitem">Nicht stapelbar</button>
 
     <button type="button" class="context-menu-item" data-action="beladen" role="menuitem">Beladen:</button>
 
@@ -642,6 +678,48 @@
 
 
 
+  <div id="auto-pack-dialog" class="export-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="auto-pack-dialog-title">
+
+    <div class="export-dialog-backdrop" id="auto-pack-dialog-backdrop"></div>
+
+    <div class="export-dialog-panel auto-pack-dialog-panel">
+
+      <h2 id="auto-pack-dialog-title">3D-Ladeplan erstellen</h2>
+
+      <p class="panel-note">Wie soll der Ladeplan optimiert werden?</p>
+
+      <div class="auto-pack-mode-options">
+
+        <button type="button" id="auto-pack-mode-stack" class="btn btn-primary auto-pack-mode-btn">
+
+          <strong>Automatisch stapeln</strong>
+
+          <span class="auto-pack-mode-desc">Passgenau auf stapelbare Ladegüter stapeln. Keine größeren über kleinere, kein Schweben über „Nicht stapelbar“.</span>
+
+        </button>
+
+        <button type="button" id="auto-pack-mode-floor" class="btn auto-pack-mode-btn">
+
+          <strong>Ladefläche voll bestücken</strong>
+
+          <span class="auto-pack-mode-desc">Zuerst die gesamte Ladefläche belegen, ohne automatisches Stapeln.</span>
+
+        </button>
+
+      </div>
+
+      <div class="btn-row auto-pack-dialog-actions">
+
+        <button type="button" id="auto-pack-dialog-cancel" class="btn">Abbrechen</button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
   <div id="beladung-dialog" class="export-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="beladung-dialog-title">
 
     <div class="export-dialog-backdrop" id="beladung-dialog-backdrop"></div>
@@ -674,11 +752,35 @@
 
   <script src="../js/trucks.js"></script>
 
-  <script src="../js/packer3d.js"></script>
+  <script src="../js/vehicle-images.js"></script>
 
-  <script src="js/app-3d.js?v=5"></script>
+  <script src="../js/vehicle-photo.js"></script>
+
+  <script src="../js/packer3d.js?v=8"></script>
+
+  <script src="../js/panel-toggles.js"></script>
+
+  <script src="js/app-3d.js?v=24"></script>
 
   <script src="js/export-3d.js?v=1"></script>
+
+  <script>
+
+    initLadeplanPanelToggles({
+
+      appId: 'app-layout',
+
+      columns: [
+
+        { columnId: 'panel-column-left', toggleId: 'toggle-left-panel', side: 'left', storageKey: '3d-left' },
+
+        { columnId: 'panel-column-right', toggleId: 'toggle-right-panel', side: 'right', storageKey: '3d-right' },
+
+      ],
+
+    });
+
+  </script>
   <script src="../../back.js"></script>
 
 </body>

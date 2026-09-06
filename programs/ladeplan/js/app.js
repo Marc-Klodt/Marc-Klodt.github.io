@@ -10,7 +10,6 @@
   const LPN_HEADER_TOOLTIP = 'Aktuelle Ladeplan Nummer. Nach Abschluß des Ladeplans wird für den nächsten Ladeplan eine neue Ladeplannummer ( LPN ) vergeben.';
   const LPN_START = 1001;
   const MAX_UNDO = 10;
-  const VEHICLE_PHOTO_MAX_W = 225;
   const ROTATE_HANDLE_MIN_R = 5;
   const ROTATE_HANDLE_MAX_R = 8;
 
@@ -61,9 +60,6 @@
   const contextMenuWeightRow = document.getElementById('context-menu-weight-row');
   const contextMenuWeightInput = document.getElementById('context-menu-weight');
   const btnUndo = document.getElementById('btn-undo');
-  const vehiclePhoto = document.getElementById('vehicle-photo');
-  const vehiclePhotoFrame = document.getElementById('vehicle-photo-frame');
-  const vehiclePhotoCaption = document.getElementById('vehicle-photo-caption');
 
   let items = [];
   let trailerItems = [];
@@ -1361,9 +1357,22 @@
     scheduleSave();
   }
 
+  function getStirnIndicatorPx() {
+    return Math.max(12, mToPx(0.15));
+  }
+
+  function getStirnGapPx() {
+    return Math.max(4, mToPx(0.05));
+  }
+
+  function getStirnLayoutPx() {
+    return getStirnIndicatorPx() + getStirnGapPx();
+  }
+
   function computeLayoutForBed(bedDims) {
+    const stirnLayoutPx = getStirnLayoutPx();
     return {
-      w: Math.round(bedDims.length * pixelsPerMeter + PADDING * 2),
+      w: Math.round(bedDims.length * pixelsPerMeter + PADDING * 2 + stirnLayoutPx),
       h: Math.round(bedDims.width * pixelsPerMeter + PADDING * 2 + 36),
     };
   }
@@ -1384,7 +1393,7 @@
   }
 
   function bedOrigin() {
-    return { x: PADDING, y: PADDING + 28 };
+    return { x: PADDING + getStirnLayoutPx(), y: PADDING + 28 };
   }
 
   function hitTest(mx, my, bedItems) {
@@ -1530,19 +1539,22 @@
     targetCtx.lineWidth = highlight ? 2.5 : 2;
     targetCtx.strokeRect(origin.x, origin.y, w, h);
 
-    targetCtx.save();
-    targetCtx.strokeStyle = highlight ? '#fbbf24' : '#94a3b8';
-    targetCtx.lineWidth = highlight ? 3 : 2;
-    targetCtx.setLineDash([6, 4]);
-    targetCtx.beginPath();
-    targetCtx.moveTo(origin.x, origin.y);
-    targetCtx.lineTo(origin.x, origin.y + h);
-    targetCtx.stroke();
-    targetCtx.setLineDash([]);
-    targetCtx.fillStyle = highlight ? '#fde68a' : '#cbd5e1';
+    const stirnW = getStirnIndicatorPx();
+    const stirnGap = getStirnGapPx();
+    const stirnX = origin.x - stirnGap - stirnW;
+    targetCtx.fillStyle = '#22c55e';
+    targetCtx.fillRect(stirnX, origin.y, stirnW, h);
+    targetCtx.strokeStyle = '#16a34a';
+    targetCtx.lineWidth = 1;
+    targetCtx.strokeRect(stirnX, origin.y, stirnW, h);
+    targetCtx.fillStyle = '#000000';
     targetCtx.font = '10px Segoe UI, sans-serif';
-    targetCtx.textAlign = 'left';
-    targetCtx.fillText('Stirnwand', origin.x + 4, origin.y + h - 6);
+    targetCtx.save();
+    targetCtx.textAlign = 'center';
+    targetCtx.textBaseline = 'middle';
+    targetCtx.translate(stirnX + stirnW / 2, origin.y + h / 2);
+    targetCtx.rotate(-Math.PI / 2);
+    targetCtx.fillText('Stirnwand', 0, 0);
     targetCtx.restore();
 
     targetCtx.fillStyle = '#475569';
@@ -1799,76 +1811,8 @@
     updateVehiclePhoto(truck);
   }
 
-  function resizeVehiclePhoto() {
-    if (!vehiclePhoto || !vehiclePhoto.naturalWidth) return;
-    const panel = document.getElementById('vehicle-photo-panel');
-    const available = panel ? Math.max(100, panel.clientWidth - 32) : VEHICLE_PHOTO_MAX_W;
-    const maxW = Math.min(VEHICLE_PHOTO_MAX_W, available);
-    let w = vehiclePhoto.naturalWidth;
-    let h = vehiclePhoto.naturalHeight;
-    if (w > maxW) {
-      const scale = maxW / w;
-      w = Math.round(w * scale);
-      h = Math.round(h * scale);
-    }
-    const size = w + 'px';
-    const sizeH = h + 'px';
-    vehiclePhoto.style.width = size;
-    vehiclePhoto.style.height = sizeH;
-    if (vehiclePhotoFrame) {
-      vehiclePhotoFrame.style.width = size;
-      vehiclePhotoFrame.style.height = sizeH;
-    }
-  }
-
   function updateVehiclePhoto(truck) {
-    if (!vehiclePhoto) return;
-    if (!truck) {
-      vehiclePhoto.removeAttribute('src');
-      vehiclePhoto.alt = '';
-      vehiclePhoto.style.width = '0';
-      vehiclePhoto.style.height = '0';
-      if (vehiclePhotoFrame) {
-        vehiclePhotoFrame.style.width = '0';
-        vehiclePhotoFrame.style.height = '0';
-      }
-      if (vehiclePhotoCaption) vehiclePhotoCaption.textContent = '';
-      return;
-    }
-    const src = typeof VehicleImages !== 'undefined'
-      ? VehicleImages.getImageSrc(truck.id)
-      : 'assets/vehicles/generic.png';
-
-    vehiclePhoto.style.width = '0';
-    vehiclePhoto.style.height = '0';
-    if (vehiclePhotoFrame) {
-      vehiclePhotoFrame.style.width = '0';
-      vehiclePhotoFrame.style.height = '0';
-    }
-
-    const onPhotoReady = () => {
-      vehiclePhoto.onload = null;
-      resizeVehiclePhoto();
-    };
-
-    vehiclePhoto.onload = onPhotoReady;
-    vehiclePhoto.src = src;
-    if (vehiclePhoto.complete) onPhotoReady();
-
-    vehiclePhoto.alt = `${truck.name} – linke Seitenansicht (Referenzbild)`;
-    if (vehiclePhotoCaption) {
-      const truck = getTruck();
-      if (isAnhaenger(truck)) {
-        const trailerBed = getBedDims(truck, 'trailer');
-        const area = (trailerBed.length * trailerBed.width).toFixed(2);
-        vehiclePhotoCaption.textContent =
-          `${truck.name} · Anhänger ${trailerBed.length.toFixed(2)} × ${trailerBed.width.toFixed(2)} m (${area} m²)`;
-      } else {
-        const area = (truck.length * truck.width).toFixed(2);
-        vehiclePhotoCaption.textContent =
-          `${truck.name} · Ladefläche ${truck.length.toFixed(2)} × ${truck.width.toFixed(2)} m (${area} m²)`;
-      }
-    }
+    VehiclePhotoPanel.update(truck);
   }
 
   function updateUsage(truck, mainBed) {
@@ -4875,6 +4819,22 @@
       resizeVehiclePhoto();
     });
   }
+
+  function buildVehiclePhotoCaption(truck) {
+    if (isAnhaenger(truck)) {
+      const trailerBed = getBedDims(truck, 'trailer');
+      const area = (trailerBed.length * trailerBed.width).toFixed(2);
+      return `${truck.name} · Anhänger ${trailerBed.length.toFixed(2)} × ${trailerBed.width.toFixed(2)} m (${area} m²)`;
+    }
+    const area = (truck.length * truck.width).toFixed(2);
+    return `${truck.name} · Ladefläche ${truck.length.toFixed(2)} × ${truck.width.toFixed(2)} m (${area} m²)`;
+  }
+
+  function resizeVehiclePhoto() {
+    VehiclePhotoPanel.resize();
+  }
+
+  VehiclePhotoPanel.init({ buildCaption: buildVehiclePhotoCaption });
 
   initTruckSelect();
   initPresets();
