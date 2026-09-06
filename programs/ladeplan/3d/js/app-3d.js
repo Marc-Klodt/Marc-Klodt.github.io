@@ -288,6 +288,94 @@
 
 
 
+  const EPS = 1e-6;
+
+  const COLLISION_TOL = 0.01;
+
+
+
+  function roundDim(value) {
+
+    return Math.round((value || 0) * 1000) / 1000;
+
+  }
+
+
+
+  function itemBounds(item) {
+
+    return {
+
+      x: roundDim(item.x),
+
+      y: roundDim(item.y),
+
+      z: roundDim(item.z),
+
+      length: roundDim(item.length),
+
+      width: roundDim(item.width),
+
+      height: roundDim(item.height),
+
+    };
+
+  }
+
+
+
+  function overlapsXYTol(a, b, tol = COLLISION_TOL) {
+
+    return (
+
+      a.x < b.x + b.length - tol &&
+
+      a.x + a.length > b.x + tol &&
+
+      a.y < b.y + b.width - tol &&
+
+      a.y + a.width > b.y + tol
+
+    );
+
+  }
+
+
+
+  function overlapDepth(minA, maxA, minB, maxB) {
+
+    return Math.min(maxA, maxB) - Math.max(minA, minB);
+
+  }
+
+
+
+  function itemsCollide(a, b) {
+
+    const ba = itemBounds(a);
+
+    const bb = itemBounds(b);
+
+    if (!overlapsXYTol(ba, bb)) return false;
+
+    // Gestapelte Ladegüter: eines liegt vollständig über dem anderen (auch mehrstufig)
+
+    if (ba.z >= bb.z + bb.height - COLLISION_TOL) return false;
+
+    if (bb.z >= ba.z + ba.height - COLLISION_TOL) return false;
+
+    const depthX = overlapDepth(ba.x, ba.x + ba.length, bb.x, bb.x + bb.length);
+
+    const depthY = overlapDepth(ba.y, ba.y + ba.width, bb.y, bb.y + bb.width);
+
+    const depthZ = overlapDepth(ba.z, ba.z + ba.height, bb.z, bb.z + bb.height);
+
+    return depthX > COLLISION_TOL && depthY > COLLISION_TOL && depthZ > COLLISION_TOL;
+
+  }
+
+
+
   function getCollidingIds() {
 
     const colliding = new Set();
@@ -296,7 +384,7 @@
 
       for (let j = i + 1; j < items.length; j += 1) {
 
-        if (LadeplanPacker3D.boxesOverlap(items[i], items[j])) {
+        if (itemsCollide(items[i], items[j])) {
 
           colliding.add(items[i].id);
 
@@ -314,7 +402,39 @@
 
 
 
-  const EPS = 1e-6;
+  function normalizeNotStackable(value) {
+
+    if (value === true || value === 1) return true;
+
+    if (value === false || value === 0 || value == null) return false;
+
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+
+    return false;
+
+  }
+
+
+
+  function isStackableSupport(item) {
+
+    return item && !normalizeNotStackable(item.notStackable);
+
+  }
+
+
+
+  function normalizeItemFields(item) {
+
+    return {
+
+      ...item,
+
+      notStackable: normalizeNotStackable(item.notStackable),
+
+    };
+
+  }
 
 
 
@@ -454,7 +574,7 @@
 
       if (other.id === item.id) return;
 
-      if (other.notStackable) return;
+      if (!isStackableSupport(other)) return;
 
       if (!overlapsXY(item, other)) return;
 
@@ -508,7 +628,7 @@
 
     items.forEach((other) => {
 
-      if (other.id === item.id || !other.notStackable) return;
+      if (other.id === item.id || !normalizeNotStackable(other.notStackable)) return;
 
       if (!overlapsXY(item, other)) return;
 
@@ -572,7 +692,7 @@
 
     pushUndo();
 
-    item.notStackable = !item.notStackable;
+    item.notStackable = !normalizeNotStackable(item.notStackable);
 
     reresolveStackingAfterSupportChange(item);
 
@@ -832,7 +952,7 @@
 
           <dt>Status</dt>
 
-          <dd>${colliding ? '⚠ Überlappung' : overH ? '⚠ über Innenhöhe' : item.notStackable ? 'Nicht stapelbar' : 'OK'}</dd>
+          <dd>${colliding ? '⚠ Überlappung' : overH ? '⚠ über Innenhöhe' : normalizeNotStackable(item.notStackable) ? 'Nicht stapelbar' : 'Stapelbar'}</dd>
 
           <dt>Beladung</dt>
 
@@ -934,6 +1054,8 @@
 
       beladung: [...getItemBeladung(item)],
 
+      notStackable: normalizeNotStackable(item.notStackable),
+
     };
 
     items.push(copy);
@@ -1014,7 +1136,7 @@
 
       const item = findItemById(itemId);
 
-      notStackableBtn.textContent = item?.notStackable ? 'Stapelbar machen' : 'Nicht stapelbar';
+      notStackableBtn.textContent = normalizeNotStackable(item?.notStackable) ? 'Stapelbar machen' : 'Nicht stapelbar';
 
     }
 
@@ -2016,7 +2138,7 @@
 
       cargoGroup.add(edge);
 
-      if (item.notStackable) mesh.add(createNotStackableMark(item));
+      if (normalizeNotStackable(item.notStackable)) mesh.add(createNotStackableMark(item));
 
     });
 
@@ -2226,6 +2348,42 @@
 
 
 
+  function worldPointToPlanLocal(point) {
+
+    const local = point.clone();
+
+    if (planGroup) planGroup.worldToLocal(local);
+
+    return local;
+
+  }
+
+
+
+  function localPlaneYToWorldY(localPlaneY) {
+
+    const worldPoint = new THREE.Vector3(0, localPlaneY, 0);
+
+    if (planGroup) planGroup.localToWorld(worldPoint);
+
+    return worldPoint.y;
+
+  }
+
+
+
+  function intersectDragPlaneLocal(clientX, clientY, localPlaneY) {
+
+    const worldHit = intersectDragPlane(clientX, clientY, localPlaneYToWorldY(localPlaneY));
+
+    if (!worldHit) return null;
+
+    return worldPointToPlanLocal(worldHit);
+
+  }
+
+
+
   function applyDragAt(clientX, clientY) {
 
     if (!dragState) return;
@@ -2234,13 +2392,13 @@
 
     if (!item) return;
 
-    const hit = intersectDragPlane(clientX, clientY, 0);
+    const hit = intersectDragPlaneLocal(clientX, clientY, dragState.planeLocalY);
 
     if (!hit) return;
 
-    item.x = snap(hit.x - dragState.offsetX - item.length / 2);
+    item.x = snap(hit.x - dragState.grabOffsetX);
 
-    item.y = snap(hit.z - dragState.offsetZ - item.width / 2);
+    item.y = snap(hit.z - dragState.grabOffsetZ);
 
     finalizeItemPlacement(item, { resolveStack: true });
 
@@ -2382,19 +2540,19 @@
 
       if (!item) return;
 
-      const pos = itemToWorldPosition(item);
+      const localHit = intersectDragPlaneLocal(event.clientX, event.clientY, item.z)
 
-      const floorHit = intersectDragPlane(event.clientX, event.clientY, 0);
-
-      const ref = floorHit || pick.point;
+        || worldPointToPlanLocal(pick.point);
 
       dragState = {
 
         id: pick.itemId,
 
-        offsetX: ref.x - pos.x,
+        planeLocalY: item.z,
 
-        offsetZ: ref.z - pos.z,
+        grabOffsetX: localHit.x - item.x,
+
+        grabOffsetZ: localHit.z - item.y,
 
         startClientX: event.clientX,
 
@@ -2956,7 +3114,7 @@
 
     const bedH = getTruckHeight(truck);
 
-    const result = LadeplanPacker3D.packBest(truck.length, truck.width, bedH, items.map((i) => ({ ...i })), {
+    const result = LadeplanPacker3D.packBest(truck.length, truck.width, bedH, items.map((i) => normalizeItemFields({ ...i })), {
 
       allowRotate: document.getElementById('auto-rotate').checked,
 
@@ -2968,13 +3126,13 @@
 
     });
 
-    const placedIds = new Set(result.placed.map((p) => p.id));
+    const placedMap = new Map(result.placed.map((p) => [p.id, p]));
 
-    items = items.filter((item) => placedIds.has(item.id)).map((item) => {
+    items = items.map((item) => {
 
-      const placed = result.placed.find((p) => p.id === item.id);
+      const placed = placedMap.get(item.id);
 
-      return placed ? { ...item, ...placed } : item;
+      return placed ? normalizeItemFields({ ...item, ...placed }) : item;
 
     });
 
@@ -2988,7 +3146,13 @@
 
     const modeLabel = packMode === 'floor' ? 'Ladefläche' : 'Stapeln';
 
-    if (result.unplaced.length > 0) {
+    if (result.placedCount === 0) {
+
+      autoResult.className = 'stat-info warning';
+
+      autoResult.innerHTML = `<strong>Keine automatische Platzierung möglich (${modeLabel})</strong><br>Alle ${items.length} Ladegüter bleiben erhalten · Positionen unverändert`;
+
+    } else if (result.unplaced.length > 0) {
 
       autoResult.className = 'stat-info warning';
 
@@ -3174,7 +3338,7 @@
 
     if (data.customMaxWeight) customMaxWeight.value = data.customMaxWeight;
 
-    items = (data.items || []).map((item) => ({
+    items = (data.items || []).map((item) => normalizeItemFields({
 
       ...item,
 
@@ -3185,8 +3349,6 @@
       rotation: item.rotation || 0,
 
       beladung: normalizeBeladung(item.beladung),
-
-      notStackable: !!item.notStackable,
 
     }));
 

@@ -4,6 +4,17 @@ const LadeplanPacker3D = (() => {
   const EPS = 1e-6;
   const SUPPORT_TOL = 0.002;
 
+  function normalizeNotStackable(value) {
+    if (value === true || value === 1) return true;
+    if (value === false || value === 0 || value == null) return false;
+    if (typeof value === 'string') return value.toLowerCase() === 'true';
+    return false;
+  }
+
+  function isStackableSupport(item) {
+    return !normalizeNotStackable(item.notStackable);
+  }
+
   function boxesOverlap(a, b) {
     return (
       a.x < b.x + b.length - EPS &&
@@ -13,6 +24,21 @@ const LadeplanPacker3D = (() => {
       a.z < b.z + b.height - EPS &&
       a.z + b.height > b.z + EPS
     );
+  }
+
+  function boxesConflict(a, b, tol = 0.01) {
+    if (!(
+      a.x < b.x + b.length - tol &&
+      a.x + a.length > b.x + tol &&
+      a.y < b.y + b.width - tol &&
+      a.y + a.width > b.y + tol
+    )) return false;
+    if (a.z >= b.z + b.height - tol) return false;
+    if (b.z >= a.z + a.height - tol) return false;
+    const depthX = Math.min(a.x + a.length, b.x + b.length) - Math.max(a.x, b.x);
+    const depthY = Math.min(a.y + a.width, b.y + b.width) - Math.max(a.y, b.y);
+    const depthZ = Math.min(a.z + a.height, b.z + b.height) - Math.max(a.z, b.z);
+    return depthX > tol && depthY > tol && depthZ > tol;
   }
 
   function overlapsXYRect(x, y, length, width, item) {
@@ -53,7 +79,7 @@ const LadeplanPacker3D = (() => {
   function resolvePlacementZ(x, y, length, width, placed) {
     let supportZ = 0;
     placed.forEach((item) => {
-      if (item.notStackable) return;
+      if (!isStackableSupport(item)) return;
       if (!overlapsXYRect(x, y, length, width, item)) return;
       const top = item.z + item.height;
       if (top > supportZ) supportZ = top;
@@ -66,19 +92,23 @@ const LadeplanPacker3D = (() => {
     return Math.round(rawZ * 1000) / 1000;
   }
 
-  function hasPassgenauStackSupport(x, y, z, length, width, placed) {
+  function hasContainmentSupport(x, y, z, length, width, placed) {
     if (z <= EPS) return true;
     return placed.some((item) => {
-      if (item.notStackable) return false;
+      if (!isStackableSupport(item)) return false;
       const top = item.z + item.height;
       if (Math.abs(z - top) > SUPPORT_TOL) return false;
       return (
-        x >= item.x - EPS &&
-        y >= item.y - EPS &&
-        x + length <= item.x + item.length + EPS &&
-        y + width <= item.y + item.width + EPS
+        x >= item.x - SUPPORT_TOL &&
+        y >= item.y - SUPPORT_TOL &&
+        x + length <= item.x + item.length + SUPPORT_TOL &&
+        y + width <= item.y + item.width + SUPPORT_TOL
       );
     });
+  }
+
+  function hasPassgenauStackSupport(x, y, z, length, width, placed) {
+    return hasContainmentSupport(x, y, z, length, width, placed);
   }
 
   function hasCompleteStackableSupport(x, y, z, length, width, placed) {
@@ -91,7 +121,7 @@ const LadeplanPacker3D = (() => {
         const px = x + (length * i) / nx;
         const py = y + (width * j) / ny;
         const supported = placed.some((item) => {
-          if (item.notStackable) return false;
+          if (!isStackableSupport(item)) return false;
           const top = item.z + item.height;
           if (Math.abs(z - top) > SUPPORT_TOL) return false;
           return (
@@ -107,24 +137,24 @@ const LadeplanPacker3D = (() => {
     return true;
   }
 
-  function hasValidSupport(x, y, z, length, width, placed, packMode) {
+  function hasValidSupport(x, y, z, length, width, placed, packMode, isNotStackable = false) {
     if (z <= EPS) return true;
     if (packMode === 'stack') {
-      return hasPassgenauStackSupport(x, y, z, length, width, placed)
-        && hasCompleteStackableSupport(x, y, z, length, width, placed);
+      if (!hasCompleteStackableSupport(x, y, z, length, width, placed)) return false;
+      return hasContainmentSupport(x, y, z, length, width, placed);
     }
     return placed.some((item) => {
-      if (item.notStackable) return false;
+      if (!isStackableSupport(item)) return false;
       if (!overlapsXYRect(x, y, length, width, item)) return false;
       return Math.abs(z - (item.z + item.height)) <= SUPPORT_TOL;
     });
   }
 
-  function canPlace(x, y, z, length, width, height, placed, truckL, truckW, truckH, packMode) {
+  function canPlace(x, y, z, length, width, height, placed, truckL, truckW, truckH, packMode, isNotStackable = false) {
     if (!fitsInBin(x, y, z, length, width, height, truckL, truckW, truckH)) return false;
-    if (!hasValidSupport(x, y, z, length, width, placed, packMode)) return false;
+    if (!hasValidSupport(x, y, z, length, width, placed, packMode, isNotStackable)) return false;
     const candidate = { x, y, z, length, width, height };
-    return !placed.some((item) => boxesOverlap(candidate, item));
+    return !placed.some((item) => boxesConflict(candidate, item));
   }
 
   function mergeIntervals(intervals) {
@@ -215,11 +245,14 @@ const LadeplanPacker3D = (() => {
     return Math.max(...rows.map((r) => r.x + r.rowLength));
   }
 
-  function placementScore(x, y, z, length, width, placed, truckW, packMode) {
+  function placementScore(x, y, z, length, width, placed, truckW, packMode, isNotStackable) {
     const gap = z <= EPS ? widthGapAtXBand(x, length, y, width, placed, truckW) : 0;
     let score = x * 100_000 + gap * 10_000 + y;
 
-    if (packMode === 'stack' && z > EPS) {
+    if (isNotStackable && z > EPS) {
+      score -= 60_000_000;
+      score -= z * 2_000;
+    } else if (packMode === 'stack' && z > EPS) {
       score -= 50_000_000;
       score += z * 1_000;
     } else {
@@ -240,16 +273,17 @@ const LadeplanPacker3D = (() => {
 
   function addPassgenauStackCandidates(addXY, length, width, item) {
     const fitsInside = (x, y) => (
-      x >= item.x - EPS &&
-      y >= item.y - EPS &&
-      x + length <= item.x + item.length + EPS &&
-      y + width <= item.y + item.width + EPS
+      x >= item.x - SUPPORT_TOL &&
+      y >= item.y - SUPPORT_TOL &&
+      x + length <= item.x + item.length + SUPPORT_TOL &&
+      y + width <= item.y + item.width + SUPPORT_TOL
     );
     const positions = [
       [item.x, item.y],
       [item.x + item.length - length, item.y],
       [item.x, item.y + item.width - width],
       [item.x + item.length - length, item.y + item.width - width],
+      [item.x + (item.length - length) / 2, item.y + (item.width - width) / 2],
     ];
     positions.forEach(([x, y]) => {
       if (fitsInside(x, y)) addXY(x, y, true);
@@ -313,7 +347,8 @@ const LadeplanPacker3D = (() => {
     }
 
     placed.forEach((item) => {
-      if (!item.notStackable && packMode === 'stack') {
+      if (!isStackableSupport(item)) return;
+      if (packMode === 'stack') {
         addPassgenauStackCandidates(addXY, length, width, item);
       }
     });
@@ -338,11 +373,16 @@ const LadeplanPacker3D = (() => {
     return candidates;
   }
 
-  function choosePositionPool(valid, placed, truckW, packMode) {
+  function choosePositionPool(valid, placed, truckW, packMode, isNotStackable) {
     const floorPool = valid.filter((p) => p.z <= EPS);
     const stackedPool = valid.filter((p) => p.z > EPS);
 
     if (packMode === 'floor') {
+      return floorPool;
+    }
+
+    if (isNotStackable) {
+      if (stackedPool.length) return stackedPool;
       return floorPool;
     }
 
@@ -353,25 +393,25 @@ const LadeplanPacker3D = (() => {
     return floorPool;
   }
 
-  function findBestPosition(truckL, truckW, truckH, length, width, height, placed, { gridStep, packMode }) {
+  function findBestPosition(truckL, truckW, truckH, length, width, height, placed, { gridStep, packMode, isNotStackable = false }) {
     const valid = [];
     const candidates = collectCandidateXY(truckL, truckW, length, width, placed, gridStep, packMode);
 
     candidates.forEach(({ x, y }) => {
       const rawZ = packMode === 'floor' ? 0 : resolvePlacementZ(x, y, length, width, placed);
       const z = resolvePlacementZSnapped(rawZ);
-      if (!canPlace(x, y, z, length, width, height, placed, truckL, truckW, truckH, packMode)) return;
+      if (!canPlace(x, y, z, length, width, height, placed, truckL, truckW, truckH, packMode, isNotStackable)) return;
       valid.push({
         x,
         y,
         z,
-        score: placementScore(x, y, z, length, width, placed, truckW, packMode),
+        score: placementScore(x, y, z, length, width, placed, truckW, packMode, isNotStackable),
       });
     });
 
     if (!valid.length) return null;
 
-    const pool = choosePositionPool(valid, placed, truckW, packMode);
+    const pool = choosePositionPool(valid, placed, truckW, packMode, isNotStackable);
     if (!pool.length) return null;
 
     return pool.reduce((best, p) => (!best || p.score < best.score ? p : best), null);
@@ -381,9 +421,9 @@ const LadeplanPacker3D = (() => {
     for (let i = 0; i < placed.length; i += 1) {
       const a = placed[i];
       if (!fitsInBin(a.x, a.y, a.z, a.length, a.width, a.height, truckL, truckW, truckH)) return false;
-      if (!hasValidSupport(a.x, a.y, a.z, a.length, a.width, placed.filter((p) => p.id !== a.id), packMode)) return false;
+      if (!hasValidSupport(a.x, a.y, a.z, a.length, a.width, placed.filter((p) => p.id !== a.id), packMode, normalizeNotStackable(a.notStackable))) return false;
       for (let j = i + 1; j < placed.length; j += 1) {
-        if (boxesOverlap(a, placed[j])) return false;
+        if (boxesConflict(a, placed[j])) return false;
       }
     }
     return true;
@@ -407,8 +447,25 @@ const LadeplanPacker3D = (() => {
     return orientations;
   }
 
+  function notStackableLast(sortFn) {
+    return (items) => {
+      const stackable = items.filter((item) => isStackableSupport(item));
+      const notStackable = items.filter((item) => !isStackableSupport(item));
+      sortFn(stackable);
+      sortFn(notStackable);
+      return [...stackable, ...notStackable];
+    };
+  }
+
+  function normalizeItem(item) {
+    return {
+      ...item,
+      notStackable: normalizeNotStackable(item.notStackable),
+    };
+  }
+
   function packOnce(truckL, truckW, truckH, items, { allowRotate, gridStep, sortFn, maxWeight = Infinity, packMode = 'stack' }) {
-    const sorted = sortFn(items.map((item) => ({ ...item })));
+    const sorted = sortFn(items.map((item) => normalizeItem(item)));
     const placed = [];
     const unplaced = [];
     let usedWeight = 0;
@@ -422,11 +479,16 @@ const LadeplanPacker3D = (() => {
 
       const origL = item.length;
       const origW = item.width;
+      const isNotStackable = normalizeNotStackable(item.notStackable);
       let best = null;
 
       getOrientations(item, allowRotate, truckW).forEach(([length, width, height]) => {
         if (length > truckL + EPS || width > truckW + EPS || height > truckH + EPS) return;
-        const pos = findBestPosition(truckL, truckW, truckH, length, width, height, placed, { gridStep, packMode });
+        const pos = findBestPosition(truckL, truckW, truckH, length, width, height, placed, {
+          gridStep,
+          packMode,
+          isNotStackable,
+        });
         if (pos && (!best || pos.score < best.score)) {
           best = { ...pos, length, width, height };
         }
@@ -497,6 +559,7 @@ const LadeplanPacker3D = (() => {
     const widthFill = result.widthFillRatio || 0;
     const frontier = frontierWidthGap(result.placed, truckW);
     const frontierPenalty = frontier.gap * 100_000;
+    const notStackableOnTop = result.placed.filter((p) => p.notStackable && p.z > EPS).length;
     if (packMode === 'floor') {
       return (
         result.placedCount * 1_000_000
@@ -510,6 +573,7 @@ const LadeplanPacker3D = (() => {
     return (
       result.placedCount * 1_000_000
       + stackedCount * 100_000
+      + notStackableOnTop * 50_000
       + widthFill * 80_000
       + result.floorUtilization * 40_000
       + result.utilization * 10_000
@@ -533,12 +597,14 @@ const LadeplanPacker3D = (() => {
     let bestResult = null;
 
     const sortStrategies = {
-      ...SORT_STRATEGIES,
-      widthFitAsc: (items) => items.sort((a, b) => {
+      ...Object.fromEntries(
+        Object.entries(SORT_STRATEGIES).map(([key, sortFn]) => [key, notStackableLast(sortFn)]),
+      ),
+      widthFitAsc: notStackableLast((items) => items.sort((a, b) => {
         const aFit = Math.min(Math.abs(a.width - truckW), Math.abs(a.length - truckW));
         const bFit = Math.min(Math.abs(b.width - truckW), Math.abs(b.length - truckW));
         return aFit - bFit || (b.length * b.width) - (a.length * a.width);
-      }),
+      })),
     };
 
     Object.values(sortStrategies).forEach((sortFn) => {
@@ -551,14 +617,25 @@ const LadeplanPacker3D = (() => {
     });
 
     if (!bestResult) {
-      return {
-        placed: [],
-        unplaced: items.map((item) => ({ ...item })),
-        utilization: 0,
-        floorUtilization: 0,
-        placedCount: 0,
-        usedWeight: 0,
-      };
+      let fallback = null;
+      Object.values(sortStrategies).forEach((sortFn) => {
+        const result = packOnce(truckL, truckW, truckH, items, { allowRotate, gridStep, sortFn, maxWeight, packMode });
+        if (!fallback || result.placedCount > fallback.placedCount) {
+          fallback = result;
+        }
+      });
+      if (fallback && fallback.placedCount > 0) {
+        bestResult = { ...fallback, rankScore: -Infinity };
+      } else {
+        return {
+          placed: [],
+          unplaced: items.map((item) => ({ ...item })),
+          utilization: 0,
+          floorUtilization: 0,
+          placedCount: 0,
+          usedWeight: 0,
+        };
+      }
     }
 
     delete bestResult.rankScore;
