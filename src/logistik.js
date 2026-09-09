@@ -6,7 +6,7 @@ const logistikPrograms = [
     iconUrl: "programs/ladeplan/icons/ladeplan.svg",
     accent: "#3b82f6",
     type: "embed",
-    url: "programs/ladeplan/index.html?v=29",
+    url: "programs/ladeplan/index.html?v=30",
   },
   {
     id: "logistik-abc",
@@ -15,7 +15,7 @@ const logistikPrograms = [
     iconUrl: "programs/abc-analyse/abc-icon.png",
     accent: "#e07a4a",
     type: "embed",
-    url: "programs/abc-analyse/index.html",
+    url: "programs/abc-analyse/index.html?v=30",
   },
   {
     id: "logistik-lagerzonen",
@@ -24,7 +24,7 @@ const logistikPrograms = [
     iconUrl: "programs/abc-lagerzonen/assets/lagerzonen-icon.png",
     accent: "#3d8b4a",
     type: "embed",
-    url: "programs/abc-lagerzonen/index.html",
+    url: "programs/abc-lagerzonen/index.html?v=30",
   },
   {
     id: "logistik-europalette",
@@ -42,7 +42,7 @@ const logistikPrograms = [
     iconUrl: "programs/stochastik/assets/stochastik-icon.png",
     accent: "#22c55e",
     type: "embed",
-    url: "programs/stochastik/index.html",
+    url: "programs/stochastik/index.html?v=30",
   },
   {
     id: "logistik-lagerplanung",
@@ -51,7 +51,7 @@ const logistikPrograms = [
     iconUrl: "programs/lagerplanung/icons/lagerplanung-icon.png",
     accent: "#a855f7",
     type: "embed",
-    url: "programs/lagerplanung/index.html",
+    url: "programs/lagerplanung/index.html?v=30",
   },
   {
     id: "logistik-bestellpunkt",
@@ -60,6 +60,6 @@ const logistikPrograms = [
     iconUrl: "programs/bestellpunktverfahren/icons/bestellpunkt-icon.png",
     accent: "#00e5ff",
     type: "embed",
-    url: "programs/bestellpunktverfahren/index.html",
+    url: "programs/bestellpunktverfahren/index.html?v=30",
   },
 ];

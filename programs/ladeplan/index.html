@@ -7,8 +7,8 @@
   <link rel="icon" href="icons/ladeplan.ico?v=12" sizes="32x32">
   <link rel="icon" href="icons/ladeplan.svg?v=12" type="image/svg+xml">
   <link rel="shortcut icon" href="icons/ladeplan.ico?v=12">
-  <link rel="stylesheet" href="css/style.css?v=29">
-  <link rel="stylesheet" href="css/panel-ads.css?v=29">
+  <link rel="stylesheet" href="css/style.css?v=30">
+  <link rel="stylesheet" href="css/panel-ads.css?v=30">
   <link rel="stylesheet" href="../back.css">
 </head>
 <body>
@@ -18,13 +18,27 @@
       <div class="header-brand">
         <img src="icons/ladeplan.svg?v=12" alt="" class="header-logo" width="44" height="44">
         <div class="header-brand-text">
-          <nav class="header-nav" aria-label="Ladeplan Versionen">
-            <a href="index.html" class="header-nav-btn is-active" aria-current="page">Ladeplan 2D</a>
-            <div class="header-nav-3d-wrap">
-              <a href="3d/index.html" class="header-nav-btn">Ladeplan 3D</a>
-              <p class="header-nav-note">Dreidimensionaler Beladungsplaner mit Höhenberechnung für Standard- und eigenes Ladegut</p>
+          <div class="header-title-row">
+            <nav class="header-nav" aria-label="Ladeplan Versionen">
+              <a href="index.html" class="header-nav-btn is-active" aria-current="page">Ladeplan 2D</a>
+              <div class="header-nav-3d-wrap">
+                <a href="3d/index.html" class="header-nav-btn">Ladeplan 3D</a>
+                <p class="header-nav-note">Dreidimensionaler Beladungsplaner mit Höhenberechnung für Standard- und eigenes Ladegut</p>
+              </div>
+            </nav>
+            <div class="header-guides" role="group" aria-label="Hilfe">
+              <button type="button" class="guide-btn" id="btn-guide" aria-haspopup="dialog" aria-controls="dialog-guide" aria-expanded="false" title="Anleitung">
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+                <span class="guide-btn-core" aria-hidden="true">?</span>
+                <span class="visually-hidden">Anleitung zum Bedienen</span>
+              </button>
+              <button type="button" class="guide-btn guide-btn-info" id="btn-info" aria-haspopup="dialog" aria-controls="dialog-info" aria-expanded="false" title="Info zum Programm">
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+                <span class="guide-btn-core" aria-hidden="true">i</span>
+                <span class="visually-hidden">Info zum Ladeplan 2D</span>
+              </button>
             </div>
-          </nav>
+          </div>
           <p class="subtitle">Zweidimensionaler Beladungsplaner für LKW jeglicher Art</p>
         </div>
       </div>
@@ -511,6 +525,70 @@
     </div>
   </div>
 
+  <div id="dialog-guide" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-guide-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-guide-title">Anleitung</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <ol class="guide-steps">
+          <li>
+            <strong>Fahrzeug wählen.</strong>
+            Oben in der Kopfzeile den LKW-Typ auswählen oder unter „Fahrzeug“ eigene Länge, Breite und Nutzlast eintragen.
+          </li>
+          <li>
+            <strong>Ladegut platzieren.</strong>
+            Links ein Preset wählen oder eigene Maße eingeben, Anzahl festlegen und mit „Ladegut platzieren“ in die Draufsicht setzen.
+          </li>
+          <li>
+            <strong>Manuell anordnen.</strong>
+            Ladegut anklicken und ziehen, mit <kbd>R</kbd> oder „Drehen 90°“ drehen. Rechtsklick öffnet Gewicht und Kontextmenü. Strg+Z macht den letzten Schritt rückgängig.
+          </li>
+          <li>
+            <strong>Automatischen Ladeplan nutzen.</strong>
+            „Vorhandenes optimieren“ ordnet platziertes Ladegut neu an, „Aus Ladegut erstellen“ füllt die Fläche aus einer Liste. Drehung und Nutzlast können berücksichtigt werden.
+          </li>
+          <li>
+            <strong>Ergebnis prüfen.</strong>
+            Balken zeigen Gesamtgewicht und Flächenausnutzung. Überlappungen und Nutzlast werden in der Statistik gemeldet. Gewichte lassen sich in der Liste oder per Rechtsklick anpassen.
+          </li>
+          <li>
+            <strong>Speichern und ausgeben.</strong>
+            Plan als JSON speichern oder laden, als PDF oder Excel drucken oder mit „Drucken &amp; Abschließen“ den Ladeplan abschließen.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialog-info" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-info-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-info-title">Info zum Programm</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <p>Ladeplan 2D ist ein Beladungsplaner für LKW-Laderäume in der Draufsicht. Er hilft, Ladegut passgenau zu platzieren, Nutzlast und Fläche im Blick zu behalten und Pläne zu dokumentieren.</p>
+        <h3>Wozu es da ist</h3>
+        <p>Es beantwortet die Frage, <em>wie</em> Paletten, Kisten und Sondermaße auf der Ladefläche verteilt werden – manuell per Drag-and-Drop oder automatisch durch den Pack-Algorithmus.</p>
+        <h3>Was das Programm kann</h3>
+        <ul>
+          <li>Vordefinierte und eigene LKW-Typen mit Länge, Breite und Nutzlast</li>
+          <li>Standard-Ladegut und freie Maßeingabe mit Bezeichnung und Gewicht</li>
+          <li>Manuelles Verschieben, Drehen und Stapeln in der 2D-Draufsicht mit Raster und Maßanzeige</li>
+          <li>Automatische Beladung: vorhandenes optimieren oder aus einer Ladegutliste erstellen</li>
+          <li>Gewichts- und Flächenstatistik mit Überlappungsprüfung</li>
+          <li>Export als PDF und Excel, Speichern als JSON, Ladeplannummer (LPN) beim Abschließen</li>
+        </ul>
+        <p>Für dreidimensionale Beladung mit Höhe und Stapeln steht <a href="3d/index.html">Ladeplan 3D</a> zur Verfügung.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/header-guides.js"></script>
   <script src="js/trucks.js"></script>
   <script src="js/packer.js?v=3"></script>
   <script src="js/vehicle-images.js"></script>

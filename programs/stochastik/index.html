@@ -12,9 +12,26 @@
 <body>
   <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
   <header class="topbar">
-    <div>
+    <div class="header-brand">
+      <img src="img/icon.svg" alt="" class="header-logo" width="44" height="44">
+      <div>
       <p class="eyebrow">Bestandsplanung unter Unsicherheit</p>
-      <h1>Stochastische Bedarfsanalyse</h1>
+      <div class="header-title-row">
+        <h1>Stochastische Bedarfsanalyse</h1>
+        <div class="header-guides" role="group" aria-label="Hilfe">
+          <button type="button" class="guide-btn" id="btn-guide" aria-haspopup="dialog" aria-controls="dialog-guide" aria-expanded="false" title="Anleitung">
+            <span class="guide-btn-rim" aria-hidden="true"></span>
+            <span class="guide-btn-core" aria-hidden="true">?</span>
+            <span class="visually-hidden">Anleitung zum Bedienen</span>
+          </button>
+          <button type="button" class="guide-btn guide-btn-info" id="btn-info" aria-haspopup="dialog" aria-controls="dialog-info" aria-expanded="false" title="Info zum Programm">
+            <span class="guide-btn-rim" aria-hidden="true"></span>
+            <span class="guide-btn-core" aria-hidden="true">i</span>
+            <span class="visually-hidden">Info zur stochastischen Bedarfsanalyse</span>
+          </button>
+        </div>
+      </div>
+    </div>
     </div>
     <div class="topbar-actions">
       <label class="btn ghost">
@@ -173,6 +190,68 @@
       </div>
     </div>
     <div id="pdf-stage" class="pdf-stage"></div>
+  </div>
+
+  <div id="dialog-guide" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-guide-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-guide-title">Anleitung</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <ol class="guide-steps">
+          <li>
+            <strong>Artikelstamm füllen.</strong>
+            Artikelnr, Bezeichnung, Bedarf je Tag, Woche, Monat und Jahr sowie die Wiederbeschaffungszeit (WBZ) in die weißen Eingabefelder schreiben. Leere Horizonte bleiben unberücksichtigt.
+          </li>
+          <li>
+            <strong>Daten übernehmen.</strong>
+            Aus Excel in das Textfeld einfügen, eine CSV-Datei laden oder „Beispieldaten“ nutzen. Neue Zeilen mit „Artikel hinzufügen“.
+          </li>
+          <li>
+            <strong>Auswertung einstellen.</strong>
+            Oben die Einheit (Tag, Woche, Monat, Jahr), den Servicegrad α, die Bestellpolitik (s, Q oder R, S) und bei Bedarf die XYZ-Grenzen wählen.
+          </li>
+          <li>
+            <strong>Artikel prüfen.</strong>
+            Eine Zeile anklicken. Rechts bzw. darunter erscheinen μ, σ, CV, Sicherheitsbestand, Meldebestand und das Balkendiagramm der vier Horizonte.
+          </li>
+          <li>
+            <strong>Ergebnisse ablesen.</strong>
+            Das große Balkendiagramm zeigt Bedarf, Sicherheitsbestand und s bzw. S je Artikel. XYZ-Farben kennzeichnen regelmäßig, schwankend und unregelmäßig.
+          </li>
+          <li>
+            <strong>Sichern und ausgeben.</strong>
+            Der Stamm bleibt im Browser gespeichert. Zusätzlich CSV exportieren oder über die PDF-Vorschau drucken.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialog-info" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-info-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-info-title">Info zum Programm</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <p>Die stochastische Bedarfsanalyse plant Bestände unter Unsicherheit: Der Bedarf schwankt, die Wiederbeschaffung dauert, und trotzdem soll ein gewählter Servicegrad gehalten werden.</p>
+        <h3>Wozu es da ist</h3>
+        <p>Es beantwortet, wie unregelmäßig ein Artikel verbraucht wird und wie viel Sicherheitsbestand nötig ist, damit in der Wiederbeschaffungszeit möglichst nichts fehlt. So lassen sich Meldebestand s bzw. Bestellgrenze S aus Mittelwert, Streuung und Servicegrad ableiten.</p>
+        <h3>Was das Programm kann</h3>
+        <ul>
+          <li>Bedarf je Artikel getrennt für Tag, Woche, Monat und Jahr erfassen und auf eine Auswerteinheit umrechnen</li>
+          <li>XYZ-Klasse aus dem Variationskoeffizienten CV = σ / μ bestimmen (X regelmäßig, Y schwankend, Z unregelmäßig)</li>
+          <li>Sicherheitsbestand und Meldebestand rechnen: <code>SS = z(α) · σ · √T</code>, <code>s = μ · WBZ + SS</code></li>
+          <li>Normal-, Poisson- oder empirische Verteilung automatisch oder fest vorgeben</li>
+          <li>Ergebnisse als Balkendiagramm, CSV und PDF zeigen</li>
+        </ul>
+        <p>Geeignet ist das Verfahren vor allem für Artikel mit unabhängigem Bedarf, bei denen Mittelwert und Streuung aus mehreren Zeithorizonten geschätzt werden können.</p>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

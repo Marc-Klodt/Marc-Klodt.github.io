@@ -34,6 +34,44 @@
     return { x: snap(p.x, grid), y: snap(p.y, grid) };
   }
 
+  function snapRectToGrid(x, y, w, d, grid) {
+    if (!grid) return { x, y };
+    const left = snap(x, grid);
+    const top = snap(y, grid);
+    const right = snap(x + w, grid) - w;
+    const bottom = snap(y + d, grid) - d;
+    return {
+      x: Math.abs(x - left) <= Math.abs(x - right) ? left : right,
+      y: Math.abs(y - top) <= Math.abs(y - bottom) ? top : bottom,
+    };
+  }
+
+  function isPath(item) {
+    return Boolean(item && item.type === "path");
+  }
+
+  function isBarrier(item) {
+    return Boolean(item && (item.type === "wall" || item.type === "line" || item.type === "path"));
+  }
+
+  function isSurface(item) {
+    return Boolean(item && (item.type === "platform" || item.type === "gallery"));
+  }
+
+  function isEquipment(item) {
+    return Boolean(item && (item.type === "block" || item.type === "pallet" || item.type === "cantilever"));
+  }
+
+  function allowedOverlap(a, b) {
+    if (!a || !b) return false;
+    if (isEquipment(a) && isSurface(b)) return true;
+    if (isEquipment(b) && isSurface(a)) return true;
+    if (isPath(a) && isPath(b)) return true;
+    if (isPath(a) && (isBarrier(b) || isSurface(b))) return true;
+    if (isPath(b) && (isBarrier(a) || isSurface(a))) return true;
+    return false;
+  }
+
   function orthoFrom(origin, target) {
     const dx = target.x - origin.x;
     const dy = target.y - origin.y;
@@ -133,6 +171,36 @@
   function itemCenter(item) {
     const b = itemBBox(item);
     return { x: b.x + b.w / 2, y: b.y + b.d / 2 };
+  }
+
+  function pathEndPoints(item) {
+    const b = itemBBox(item);
+    const swapped = item.rot === 90 || item.rot === 270;
+    if (swapped) {
+      return [
+        { x: b.x + b.w / 2, y: b.y },
+        { x: b.x + b.w / 2, y: b.y + b.d },
+      ];
+    }
+    return [
+      { x: b.x, y: b.y + b.d / 2 },
+      { x: b.x + b.w, y: b.y + b.d / 2 },
+    ];
+  }
+
+  function pathSidePoints(item) {
+    const b = itemBBox(item);
+    const swapped = item.rot === 90 || item.rot === 270;
+    if (swapped) {
+      return [
+        { x: b.x, y: b.y + b.d / 2 },
+        { x: b.x + b.w, y: b.y + b.d / 2 },
+      ];
+    }
+    return [
+      { x: b.x + b.w / 2, y: b.y },
+      { x: b.x + b.w / 2, y: b.y + b.d },
+    ];
   }
 
   function rectsOverlap(a, b) {
@@ -244,6 +312,12 @@
     lerp,
     snap,
     snapPoint,
+    snapRectToGrid,
+    isBarrier,
+    isPath,
+    isSurface,
+    isEquipment,
+    allowedOverlap,
     orthoFrom,
     polygonArea,
     polygonBounds,
@@ -253,6 +327,8 @@
     nearestVertex,
     itemBBox,
     itemCenter,
+    pathEndPoints,
+    pathSidePoints,
     rectsOverlap,
     pointInRect,
     rectInsidePolygon,

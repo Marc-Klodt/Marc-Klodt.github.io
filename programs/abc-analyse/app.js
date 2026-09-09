@@ -292,12 +292,12 @@
       A: "#39FF14",
       B: "#FF5F1F",
       C: "#FF00E6",
-      line: "#00B8D4",
+      line: "#00E5FF",
       refA: "#FF9900",
       refB: "#BF00FF",
       grid: "#39FF14",
-      text: "#1c1917",
-      bg: "#ffffff",
+      text: options.forPrint ? "#1c1917" : "#e8edf4",
+      bg: options.forPrint ? "#ffffff" : "#0f1419",
     };
 
     const bars = chartRows
@@ -484,12 +484,12 @@
     const cx = options.cx || 108;
     const cy = options.cy || Math.round(height / 2);
     const r = options.r || 78;
-    const holeFill = options.holeFill || "#ffffff";
+    const holeFill = options.holeFill || (options.forPrint ? "#ffffff" : "#0f1419");
     const neon = {
       A: "#39FF14",
       B: "#FF5F1F",
       C: "#FF00E6",
-      count: "#00B8D4",
+      count: "#00E5FF",
     };
     const slices = [
       { key: "A", color: neon.A, ...summary.A },
@@ -790,6 +790,7 @@
       height: 248,
       maxBars: 32,
       interactive: false,
+      forPrint: true,
       margin: { top: 26, right: 54, bottom: 28, left: 52 },
     });
     renderClassChart(summary, document.getElementById("pdf-class"), {
@@ -802,6 +803,7 @@
       barWidth: 380,
       barStartY: 28,
       barGap: 58,
+      forPrint: true,
       holeFill: "#ffffff",
     });
     return { a, b, rows };
@@ -840,6 +842,45 @@
   function closeExportMenu() {
     if (els.exportMenu) els.exportMenu.open = false;
   }
+
+  function openDialog(id) {
+    closeDialogs();
+    const dialog = document.getElementById(id);
+    if (!dialog) return;
+    dialog.classList.remove("hidden");
+    const btn = id === "dialog-guide" ? document.getElementById("btn-guide") : document.getElementById("btn-info");
+    if (btn) btn.setAttribute("aria-expanded", "true");
+  }
+
+  function closeDialogs() {
+    ["dialog-guide", "dialog-info"].forEach((id) => {
+      const dialog = document.getElementById(id);
+      if (dialog) dialog.classList.add("hidden");
+    });
+    ["btn-guide", "btn-info"].forEach((id) => {
+      const btn = document.getElementById(id);
+      if (btn) btn.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  function isDialogOpen() {
+    return ["dialog-guide", "dialog-info"].some((id) => {
+      const dialog = document.getElementById(id);
+      return dialog && !dialog.classList.contains("hidden");
+    });
+  }
+
+  document.getElementById("btn-guide").addEventListener("click", () => {
+    if (document.getElementById("dialog-guide").classList.contains("hidden")) openDialog("dialog-guide");
+    else closeDialogs();
+  });
+  document.getElementById("btn-info").addEventListener("click", () => {
+    if (document.getElementById("dialog-info").classList.contains("hidden")) openDialog("dialog-info");
+    else closeDialogs();
+  });
+  document.querySelectorAll("[data-close-dialog]").forEach((el) => {
+    el.addEventListener("click", closeDialogs);
+  });
 
   document.getElementById("btn-sample").addEventListener("click", () => {
     items = SAMPLE_ITEMS.map((item) => ({ ...item, id: uid() }));
@@ -882,10 +923,13 @@
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeExportMenu();
-      closePreview();
+    if (event.key !== "Escape") return;
+    if (isDialogOpen()) {
+      closeDialogs();
+      return;
     }
+    closeExportMenu();
+    closePreview();
   });
 
   els.csv.addEventListener("change", async (event) => {

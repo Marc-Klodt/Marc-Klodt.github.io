@@ -116,6 +116,7 @@
   const state = {
     articles: [],
     selectedId: null,
+    qtyScale: "calc",
   };
 
   function load() {
@@ -329,7 +330,46 @@
     renderBars(article, result);
     renderResults(article, result);
     renderOverview();
-    BestellpunktChart.draw($("rop-canvas"), result, article);
+    renderScaleTabs(article, result);
+    BestellpunktChart.draw($("rop-canvas"), result, article, { qtyScale: state.qtyScale });
+  }
+
+  function renderScaleTabs(article, result) {
+    const unit = article && article.unit ? " " + article.unit : "";
+    document.querySelectorAll("[data-qty-scale]").forEach((btn) => {
+      const scale = btn.dataset.qtyScale;
+      btn.classList.toggle("on", scale === state.qtyScale);
+      const Q = result ? BestellpunktChart.qtyForScale(result, scale) : null;
+      const names = { small: "Klein", calc: "Berechnet", large: "Groß" };
+      if (scale === "small") {
+        btn.textContent = "Klein · 1–10";
+        return;
+      }
+      btn.textContent = Q != null
+        ? names[scale] + " · Q " + BestellpunktCalc.formatQty(Q, 0) + unit
+        : names[scale];
+    });
+    const hint = $("chart-scale-hint");
+    if (!hint) return;
+    if (!result) {
+      hint.textContent = "Bestellung, sobald der verfügbare Bestand den Bestellpunkt s erreicht oder unterschreitet.";
+      return;
+    }
+    const shown = BestellpunktChart.qtyForScale(result, state.qtyScale);
+    const calcQ = BestellpunktChart.qtyForScale(result, "calc");
+    if (state.qtyScale === "small") {
+      hint.textContent = "Kleine Bestellmenge: Bestandsskala fest 1–10. Die Zeitachse folgt dem kurzen Bestellzyklus.";
+      return;
+    }
+    if (state.qtyScale === "calc") {
+      hint.textContent = "Sägezahn mit der berechneten Bestellmenge Q. Umschalten auf Klein oder Groß ändert nur das Diagramm, nicht s.";
+    } else if (shown === calcQ) {
+      hint.textContent = "Diese Losgröße entspricht der berechneten Menge. Bestellpunkt s bleibt unverändert.";
+    } else {
+      hint.textContent = "Vergleich: Q = " + BestellpunktCalc.formatQty(shown, 0)
+        + " statt " + BestellpunktCalc.formatQty(calcQ, 0)
+        + ". Bestellpunkt s und Sicherheitsbestand bleiben gleich.";
+    }
   }
 
   function escapeHtml(text) {
@@ -429,9 +469,56 @@
       }
     });
 
+    document.querySelectorAll("[data-qty-scale]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.qtyScale = btn.dataset.qtyScale;
+        render();
+      });
+    });
+
+    function openDialog(id) {
+      closeDialogs();
+      const dialog = $(id);
+      if (!dialog) return;
+      dialog.classList.remove("hidden");
+      const btn = id === "dialog-guide" ? $("btn-guide") : $("btn-info");
+      if (btn) btn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeDialogs() {
+      ["dialog-guide", "dialog-info"].forEach((id) => {
+        const dialog = $(id);
+        if (dialog) dialog.classList.add("hidden");
+      });
+      ["btn-guide", "btn-info"].forEach((id) => {
+        const btn = $(id);
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    $("btn-guide").addEventListener("click", () => {
+      if ($("dialog-guide").classList.contains("hidden")) openDialog("dialog-guide");
+      else closeDialogs();
+    });
+    $("btn-info").addEventListener("click", () => {
+      if ($("dialog-info").classList.contains("hidden")) openDialog("dialog-info");
+      else closeDialogs();
+    });
+    document.querySelectorAll("[data-close-dialog]").forEach((el) => {
+      el.addEventListener("click", closeDialogs);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDialogs();
+    });
+
     window.addEventListener("resize", () => {
       const article = selected();
-      BestellpunktChart.draw($("rop-canvas"), article ? BestellpunktCalc.compute(article) : null, article);
+      BestellpunktChart.draw(
+        $("rop-canvas"),
+        article ? BestellpunktCalc.compute(article) : null,
+        article,
+        { qtyScale: state.qtyScale }
+      );
     });
   }
 

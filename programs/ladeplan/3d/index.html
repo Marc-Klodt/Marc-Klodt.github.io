@@ -14,9 +14,9 @@
 
   <link rel="icon" href="../icons/ladeplan.svg?v=12" type="image/svg+xml">
 
-  <link rel="stylesheet" href="../css/style.css?v=29">
+  <link rel="stylesheet" href="../css/style.css?v=30">
 
-  <link rel="stylesheet" href="css/style-3d.css?v=29">
+  <link rel="stylesheet" href="css/style-3d.css?v=30">
   <link rel="stylesheet" href="../../back.css">
 
 </head>
@@ -38,19 +38,47 @@
 
         <div class="header-brand-text">
 
-          <nav class="header-nav" aria-label="Ladeplan Versionen">
+          <div class="header-title-row">
 
-            <a href="../index.html" class="header-nav-btn">Ladeplan 2D</a>
+            <nav class="header-nav" aria-label="Ladeplan Versionen">
 
-            <div class="header-nav-3d-wrap">
+              <a href="../index.html" class="header-nav-btn">Ladeplan 2D</a>
 
-              <a href="index.html" class="header-nav-btn is-active-3d" aria-current="page">Ladeplan 3D</a>
+              <div class="header-nav-3d-wrap">
 
-              <p class="header-nav-note">Dreidimensionaler Beladungsplaner mit Höhenberechnung für Standard- und eigenes Ladegut</p>
+                <a href="index.html" class="header-nav-btn is-active-3d" aria-current="page">Ladeplan 3D</a>
+
+                <p class="header-nav-note">Dreidimensionaler Beladungsplaner mit Höhenberechnung für Standard- und eigenes Ladegut</p>
+
+              </div>
+
+            </nav>
+
+            <div class="header-guides" role="group" aria-label="Hilfe">
+
+              <button type="button" class="guide-btn" id="btn-guide" aria-haspopup="dialog" aria-controls="dialog-guide" aria-expanded="false" title="Anleitung">
+
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+
+                <span class="guide-btn-core" aria-hidden="true">?</span>
+
+                <span class="visually-hidden">Anleitung zum Bedienen</span>
+
+              </button>
+
+              <button type="button" class="guide-btn guide-btn-info" id="btn-info" aria-haspopup="dialog" aria-controls="dialog-info" aria-expanded="false" title="Info zum Programm">
+
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+
+                <span class="guide-btn-core" aria-hidden="true">i</span>
+
+                <span class="visually-hidden">Info zum Ladeplan 3D</span>
+
+              </button>
 
             </div>
 
-          </nav>
+          </div>
 
           <p class="subtitle">Laderaum in Länge, Breite und Höhe – inkl. Stapeln und eigenem Ladegut</p>
 
@@ -749,6 +777,134 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
+
+  <div id="dialog-guide" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-guide-title">
+
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+
+    <div class="guide-dialog-panel">
+
+      <div class="guide-dialog-head">
+
+        <h2 id="dialog-guide-title">Anleitung</h2>
+
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+
+      </div>
+
+      <div class="guide-dialog-body">
+
+        <ol class="guide-steps">
+
+          <li>
+
+            <strong>Fahrzeug wählen.</strong>
+
+            LKW-Typ auswählen oder eigene Länge, Breite, Innenhöhe und Nutzlast eintragen. Die verfügbare Raumhöhe wird angezeigt.
+
+          </li>
+
+          <li>
+
+            <strong>Ladegut platzieren.</strong>
+
+            Preset wählen (Höhe direkt in den Kästchen) oder eigene Maße L/B/H eingeben. Mit „Ladegut platzieren“ erscheint das Ladegut in der 3D-Ansicht.
+
+          </li>
+
+          <li>
+
+            <strong>3D-Ansicht bedienen.</strong>
+
+            Maus: drehen und zoomen. „X Y Z ein“ zeigt Achsen, „Position ein“ verschiebt den Plan. Ladegut anklicken, ziehen und per Kontextmenü drehen, stapeln oder als „Nicht stapelbar“ markieren.
+
+          </li>
+
+          <li>
+
+            <strong>Automatisch beladen.</strong>
+
+            „Besten 3D-Ladeplan erstellen“ bietet Stapeln oder Ladefläche voll bestücken. Drehung, Nutzlast und „Nicht stapelbar“ werden berücksichtigt.
+
+          </li>
+
+          <li>
+
+            <strong>Ergebnis prüfen.</strong>
+
+            Balken und Statistik zeigen Gewicht, Volumen, Höhe und Überlappungen. Rechts das Infopanel mit Details zum gewählten Ladegut.
+
+          </li>
+
+          <li>
+
+            <strong>Speichern und ausgeben.</strong>
+
+            Plan speichern oder laden, als PDF oder Excel drucken, Ladungsliste ansehen oder mit „Drucken &amp; Abschließen“ abschließen.
+
+          </li>
+
+        </ol>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="dialog-info" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-info-title">
+
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+
+    <div class="guide-dialog-panel">
+
+      <div class="guide-dialog-head">
+
+        <h2 id="dialog-info-title">Info zum Programm</h2>
+
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+
+      </div>
+
+      <div class="guide-dialog-body">
+
+        <p>Ladeplan 3D erweitert den Beladungsplaner um Höhe und Stapeln. Laderäume werden dreidimensional dargestellt, Ladegut kann übereinander gelegt und auf Nutzlast sowie Raumhöhe geprüft werden.</p>
+
+        <h3>Wozu es da ist</h3>
+
+        <p>Es beantwortet nicht nur <em>wo</em> auf der Ladefläche platziert wird, sondern auch <em>in welcher Höhe</em> – wichtig bei unterschiedlichen Paletten, Kisten und stapelbarem vs. nicht stapelbarem Gut.</p>
+
+        <h3>Was das Programm kann</h3>
+
+        <ul>
+
+          <li>3D-Darstellung des Laderaums mit Gitter, Achsen- und Positionsmodus</li>
+
+          <li>Ladegut mit Länge, Breite, Höhe und optionalem Gewicht</li>
+
+          <li>Manuelles Verschieben, Drehen und Stapeln; Markierung als „Nicht stapelbar“</li>
+
+          <li>Automatische Beladung: stapeln oder Ladefläche voll bestücken</li>
+
+          <li>Statistik zu Gewicht, Volumen, Höhe und Kollisionen</li>
+
+          <li>Export als PDF und Excel, Speichern als JSON, Ladungsliste und Drucken &amp; Abschließen</li>
+
+        </ul>
+
+        <p>Für reine Draufsicht ohne Höhenberechnung steht <a href="../index.html">Ladeplan 2D</a> zur Verfügung.</p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <script src="../js/header-guides.js"></script>
 
   <script src="../js/trucks.js"></script>
 

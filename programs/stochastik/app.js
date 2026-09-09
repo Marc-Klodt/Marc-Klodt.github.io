@@ -4,7 +4,45 @@
   const UNITS = ["Tag", "Woche", "Monat", "Jahr"];
   const UNIT_DAYS = { Tag: 1, Woche: 7, Monat: 365.25 / 12, Jahr: 365.25 };
   const RATE_FIELDS = { Tag: "day", Woche: "week", Monat: "month", Jahr: "year" };
-  const XYZ_COLORS = { X: "#0f766e", Y: "#b45309", Z: "#9f1239" };
+  const XYZ_COLORS = { X: "#22c55e", Y: "#f59e0b", Z: "#ef4444" };
+  const CHART = {
+    x: "#22c55e",
+    y: "#f59e0b",
+    z: "#ef4444",
+    accent: "#3b82f6",
+    ss: "#3b82f6",
+    rop: "#93c5fd",
+    ink: "#e8edf4",
+    muted: "#8b9cb3",
+    grid: "#2d3a4f",
+    hole: "#1a2332",
+    mean: "#f87171",
+    day: "#3b82f6",
+    week: "#22c55e",
+    month: "#60a5fa",
+    year: "#f59e0b",
+  };
+  const CHART_PDF = {
+    x: "#0f766e",
+    y: "#b45309",
+    z: "#9f1239",
+    accent: "#1e3a5f",
+    ss: "#b45309",
+    rop: "#1e3a5f",
+    ink: "#1c1917",
+    muted: "#57534e",
+    grid: "#eeebe4",
+    hole: "#ffffff",
+    mean: "#9f1239",
+    day: "#1e3a5f",
+    week: "#0f766e",
+    month: "#c4a35a",
+    year: "#b45309",
+  };
+
+  function chartTheme(options = {}) {
+    return options.pdf ? CHART_PDF : CHART;
+  }
 
   const SAMPLE_ITEMS = [
     { sku: "100-6208", name: "Kugellager 6208-2RS", lt: 2, price: 18.5, day: 2.8, week: 20, month: 86, year: 1040 },
@@ -665,12 +703,13 @@
   }
 
   function renderXyzChart(summary, target = els.xyzChart, options = {}) {
+    const C = chartTheme(options);
     const width = options.width || Math.max(target.clientWidth || 420, 360);
     const height = options.height || 300;
     const cx = options.cx || 108;
     const cy = options.cy || Math.round(height / 2);
     const r = options.r || 78;
-    const colors = { X: "#0f766e", Y: "#b45309", Z: "#9f1239" };
+    const colors = { X: C.x, Y: C.y, Z: C.z };
     const slices = ["X", "Y", "Z"]
       .map((key) => ({ key, color: colors[key], ...summary[key] }))
       .filter((slice) => slice.count > 0);
@@ -688,10 +727,10 @@
         });
       })
       .join("");
-    const hole = svgEl("circle", { cx, cy, r: 42, fill: options.holeFill || "#ffffff" });
+    const hole = svgEl("circle", { cx, cy, r: 42, fill: options.holeFill || C.hole });
     const center =
-      svgEl("text", { x: cx, y: cy - 2, "text-anchor": "middle", "font-size": "13", fill: "#1e3a5f", "font-weight": "650" }, "Artikel") +
-      svgEl("text", { x: cx, y: cy + 16, "text-anchor": "middle", "font-size": "11", fill: "#57534e" }, String(summary.totalCount));
+      svgEl("text", { x: cx, y: cy - 2, "text-anchor": "middle", "font-size": "13", fill: C.ink, "font-weight": "650" }, "Artikel") +
+      svgEl("text", { x: cx, y: cy + 16, "text-anchor": "middle", "font-size": "11", fill: C.muted }, String(summary.totalCount));
     const maxShare = Math.max(...["X", "Y", "Z"].map((k) => Math.max(summary[k].countShare, summary[k].ssShare)), 1);
     const barX = options.barX || 230;
     const barW = Math.min(options.barWidth || 220, Math.max(80, width - barX - 52));
@@ -705,9 +744,9 @@
         const ssW = (stat.ssShare / maxShare) * barW;
         return `
           ${svgEl("text", { x: barX, y, fill: colors[key], "font-size": "13", "font-weight": "650" }, `Klasse ${key}`)}
-          ${svgEl("text", { x: barX, y: y + 14, fill: "#57534e", "font-size": "10" }, `${stat.count} Art. · SS ${formatQty(stat.ss, 0)}`)}
+          ${svgEl("text", { x: barX, y: y + 14, fill: C.muted, "font-size": "10" }, `${stat.count} Art. · SS ${formatQty(stat.ss, 0)}`)}
           ${svgEl("rect", { x: barX, y: y + 22, width: Math.max(countW, 0).toFixed(1), height: 10, fill: colors[key] })}
-          ${svgEl("rect", { x: barX, y: y + 36, width: Math.max(ssW, 0).toFixed(1), height: 10, fill: "#1e3a5f" })}
+          ${svgEl("rect", { x: barX, y: y + 36, width: Math.max(ssW, 0).toFixed(1), height: 10, fill: C.accent })}
         `;
       })
       .join("");
@@ -716,10 +755,10 @@
         ${donut}${hole}${center}${bars}
       </svg>
       <div class="legend">
-        <span><i style="background:#0f766e"></i>X regelmäßig</span>
-        <span><i style="background:#b45309"></i>Y schwankend</span>
-        <span><i style="background:#9f1239"></i>Z unregelmäßig</span>
-        <span><i style="background:#1e3a5f"></i>Anteil Sicherheitsbestand</span>
+        <span><i style="background:${C.x}"></i>X regelmäßig</span>
+        <span><i style="background:${C.y}"></i>Y schwankend</span>
+        <span><i style="background:${C.z}"></i>Z unregelmäßig</span>
+        <span><i style="background:${C.accent}"></i>Anteil Sicherheitsbestand</span>
       </div>
     `;
   }
@@ -730,6 +769,7 @@
 
   function renderResultChart(rows, target = els.resultChart, options = {}) {
     if (!target) return;
+    const C = chartTheme(options);
     const width = options.width || Math.max(target.clientWidth || 720, 520);
     const height = options.height || 360;
     const m = options.margin || { top: 18, right: 16, bottom: 64, left: 52 };
@@ -746,8 +786,8 @@
     const y = (v) => m.top + innerH - (Math.max(0, v) / maxY) * innerH;
     const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => {
       const v = maxY * t;
-      return svgEl("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), stroke: "#eeebe4" }) +
-        svgEl("text", { x: m.left - 6, y: y(v) + 3, "text-anchor": "end", fill: "#57534e", "font-size": "10" }, formatQty(v, 0));
+      return svgEl("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), stroke: C.grid }) +
+        svgEl("text", { x: m.left - 6, y: y(v) + 3, "text-anchor": "end", fill: C.muted, "font-size": "10" }, formatQty(v, 0));
     }).join("");
     const groups = rows.map((row, index) => {
       const cx = m.left + index * groupW + groupW / 2;
@@ -760,7 +800,7 @@
         x: cx,
         y: height - (rows.length > 8 ? 8 : 18),
         "text-anchor": rows.length > 8 ? "end" : "middle",
-        fill: selected ? "#1e3a5f" : "#57534e",
+        fill: selected ? C.ink : C.muted,
         "font-size": "10",
         "font-weight": selected ? "650" : "400",
       };
@@ -770,17 +810,17 @@
       return `
         ${svgEl("rect", {
           x: xMu.toFixed(1), y: y(row.mu).toFixed(1), width: barW.toFixed(1), height: h(row.mu).toFixed(1),
-          fill: XYZ_COLORS[row.xyz] || "#1e3a5f",
+          fill: XYZ_COLORS[row.xyz] || C.accent,
           "data-index": index, "data-series": "mu",
         })}
         ${svgEl("rect", {
           x: xSs.toFixed(1), y: y(row.ssUnits).toFixed(1), width: barW.toFixed(1), height: h(row.ssUnits).toFixed(1),
-          fill: "#c4a35a",
+          fill: C.ss,
           "data-index": index, "data-series": "ss",
         })}
         ${svgEl("rect", {
           x: xRop.toFixed(1), y: y(row.reorder).toFixed(1), width: barW.toFixed(1), height: h(row.reorder).toFixed(1),
-          fill: "#1e3a5f", opacity: "0.85",
+          fill: C.rop, opacity: "0.95",
           "data-index": index, "data-series": "rop",
         })}
         ${labelNode}
@@ -791,15 +831,15 @@
     target.innerHTML = `
       <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Bedarf und Sicherheitsbestand je Artikel">
         ${ticks}
-        ${svgEl("text", { x: 14, y: 12, fill: "#57534e", "font-size": "11" }, `Stück / ${unit}`)}
+        ${svgEl("text", { x: 14, y: 12, fill: C.muted, "font-size": "11" }, `Stück / ${unit}`)}
         ${groups}
       </svg>
       <div class="legend">
-        <span><i style="background:#0f766e"></i>Bedarf μ (X)</span>
-        <span><i style="background:#b45309"></i>Bedarf μ (Y)</span>
-        <span><i style="background:#9f1239"></i>Bedarf μ (Z)</span>
-        <span><i style="background:#c4a35a"></i>Sicherheitsbestand</span>
-        <span><i style="background:#1e3a5f"></i>${point}</span>
+        <span><i style="background:${C.x}"></i>Bedarf μ (X)</span>
+        <span><i style="background:${C.y}"></i>Bedarf μ (Y)</span>
+        <span><i style="background:${C.z}"></i>Bedarf μ (Z)</span>
+        <span><i style="background:${C.ss}"></i>Sicherheitsbestand</span>
+        <span><i style="background:${C.rop}"></i>${point}</span>
       </div>
     `;
     if (options.interactive === false) return;
@@ -824,6 +864,7 @@
 
   function renderHorizonChart(row, target = els.horizonChart, options = {}) {
     if (!target) return;
+    const C = chartTheme(options);
     if (!row) {
       target.innerHTML = `<p class="empty">Artikel in der Tabelle wählen.</p>`;
       return;
@@ -845,10 +886,10 @@
     const y = (v) => m.top + innerH - (Math.max(0, v) / maxY) * innerH;
     const ticks = [0, 0.5, 1].map((t) => {
       const v = maxY * t;
-      return svgEl("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), stroke: "#eeebe4" }) +
-        svgEl("text", { x: m.left - 6, y: y(v) + 3, "text-anchor": "end", fill: "#57534e", "font-size": "10" }, formatQty(v, 0));
+      return svgEl("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), stroke: C.grid }) +
+        svgEl("text", { x: m.left - 6, y: y(v) + 3, "text-anchor": "end", fill: C.muted, "font-size": "10" }, formatQty(v, 0));
     }).join("");
-    const colors = { Tag: "#1e3a5f", Woche: "#0f766e", Monat: "#c4a35a", Jahr: "#b45309" };
+    const colors = { Tag: C.day, Woche: C.week, Monat: C.month, Jahr: C.year };
     const bars = series.map((s, index) => {
       const cx = m.left + (index + 0.5) * (innerW / series.length);
       const x = cx - barW / 2;
@@ -865,21 +906,21 @@
           opacity: empty ? "0.2" : "1",
           "data-horizon": s.from,
         })}
-        ${svgEl("text", { x: cx, y: height - 14, "text-anchor": "middle", fill: "#57534e", "font-size": "11" }, s.from)}
-        ${svgEl("text", { x: cx, y: y(val) - 6, "text-anchor": "middle", fill: "#1c1917", "font-size": "10" }, empty ? "–" : formatQty(val))}
+        ${svgEl("text", { x: cx, y: height - 14, "text-anchor": "middle", fill: C.muted, "font-size": "11" }, s.from)}
+        ${svgEl("text", { x: cx, y: y(val) - 6, "text-anchor": "middle", fill: C.ink, "font-size": "10" }, empty ? "–" : formatQty(val))}
       `;
     }).join("");
     const meanLine = svgEl("line", {
       x1: m.left, x2: width - m.right, y1: y(row.mu), y2: y(row.mu),
-      stroke: "#9f1239", "stroke-dasharray": "4 3", "stroke-width": "1.4",
+      stroke: C.mean, "stroke-dasharray": "4 3", "stroke-width": "1.4",
     });
     target.innerHTML = `
       <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Bedarf nach Zeithorizont">
         ${ticks}${meanLine}${bars}
-        ${svgEl("text", { x: 14, y: 12, fill: "#57534e", "font-size": "11" }, `Stück / ${unit}`)}
+        ${svgEl("text", { x: 14, y: 12, fill: C.muted, "font-size": "11" }, `Stück / ${unit}`)}
       </svg>
       <div class="legend">
-        <span><i style="background:#9f1239"></i>Mittelwert μ ${formatQty(row.mu)}</span>
+        <span><i style="background:${C.mean}"></i>Mittelwert μ ${formatQty(row.mu)}</span>
         <span>Eingetragen: ${series.filter((s) => s.raw != null).map((s) => `${s.from} ${formatQty(s.raw)}`).join(" · ") || "keine Werte"}</span>
       </div>
     `;
@@ -1317,10 +1358,10 @@
     const kpiHost = document.getElementById("pdf-kpis");
     if (kpiHost) kpiHost.innerHTML = els.kpis.innerHTML;
     renderXyzChart(summary, document.getElementById("pdf-xyz"), {
-      width: 690, height: 180, cx: 120, cy: 92, r: 64, barX: 250, barWidth: 380, barStartY: 24, barGap: 50,
+      width: 690, height: 180, cx: 120, cy: 92, r: 64, barX: 250, barWidth: 380, barStartY: 24, barGap: 50, pdf: true,
     });
     renderResultChart(rows, document.getElementById("pdf-result"), {
-      width: 690, height: 220, margin: { top: 16, right: 12, bottom: 52, left: 44 }, interactive: false,
+      width: 690, height: 220, margin: { top: 16, right: 12, bottom: 52, left: 44 }, interactive: false, pdf: true,
     });
   }
 
@@ -1445,8 +1486,40 @@
   document.addEventListener("click", (event) => {
     if (!event.target.closest(".export-menu")) closeExportMenu();
   });
+
+  function openDialog(id) {
+    closeDialogs();
+    const dialog = document.getElementById(id);
+    if (!dialog) return;
+    dialog.classList.remove("hidden");
+    const btn = id === "dialog-guide" ? document.getElementById("btn-guide") : document.getElementById("btn-info");
+    if (btn) btn.setAttribute("aria-expanded", "true");
+  }
+
+  function closeDialogs() {
+    ["dialog-guide", "dialog-info"].forEach((id) => {
+      document.getElementById(id)?.classList.add("hidden");
+    });
+    ["btn-guide", "btn-info"].forEach((id) => {
+      document.getElementById(id)?.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  document.getElementById("btn-guide")?.addEventListener("click", () => {
+    if (document.getElementById("dialog-guide")?.classList.contains("hidden")) openDialog("dialog-guide");
+    else closeDialogs();
+  });
+  document.getElementById("btn-info")?.addEventListener("click", () => {
+    if (document.getElementById("dialog-info")?.classList.contains("hidden")) openDialog("dialog-info");
+    else closeDialogs();
+  });
+  document.querySelectorAll("[data-close-dialog]").forEach((el) => {
+    el.addEventListener("click", closeDialogs);
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      closeDialogs();
       closeExportMenu();
       closePreview();
     }

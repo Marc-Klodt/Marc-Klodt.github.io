@@ -20,9 +20,25 @@
   const RACK_W = GEO.armM * 2 + GEO.colM;
   const SLOTS = GEO.racks * 2 * GEO.levels * GEO.bays;
 
-  const ZONE_COLOR = { C: "#c24e1f", B: "#b8922d", A: "#4d6572", empty: "#d8d2c6" };
-  const ZONE_FACE = { C: "#d9784e", B: "#d4b56a", A: "#6d8490", empty: "#cfc8ba" };
-  const ZONE_TOP = { C: "#e39a78", B: "#e2cc8e", A: "#8aa0ab", empty: "#e4dfd4" };
+  const FONT = "Segoe UI, system-ui, sans-serif";
+  const ZONE_COLOR = { C: "#f97316", B: "#eab308", A: "#64748b", empty: "#334155" };
+  const ZONE_FACE = { C: "#ea580c", B: "#ca8a04", A: "#475569", empty: "#1e293b" };
+  const ZONE_TOP = { C: "#fb923c", B: "#facc15", A: "#94a3b8", empty: "#475569" };
+  const GFX = {
+    floor: "#1a2332",
+    floorStroke: "#2d3a4f",
+    wa: "#16382c",
+    waStroke: "#22c55e",
+    waText: "#4ade80",
+    rackTop: "#94a3b8",
+    rackFront: "#475569",
+    rackRight: "#64748b",
+    edge: "#3d4d66",
+    label: "#e8edf4",
+    muted: "#8b9cb3",
+    planRack: "#243044",
+    line: "#93c5fd",
+  };
 
   const CATALOG = [
     "IPE 160 Träger", "IPE 200 Träger", "IPE 240 Träger", "HEA 180 Träger",
@@ -323,9 +339,9 @@
         : `${slot.id} · frei`;
       g.appendChild(svgEl("title", {}, tip));
     }
-    g.appendChild(svgEl("polygon", { class: "face", points: faces.right, fill: fills.right, stroke: "#8f887c", "stroke-width": 0.6 }));
-    g.appendChild(svgEl("polygon", { class: "face", points: faces.front, fill: fills.front, stroke: "#8f887c", "stroke-width": 0.6 }));
-    g.appendChild(svgEl("polygon", { class: "face", points: faces.top, fill: fills.top, stroke: "#8f887c", "stroke-width": 0.6 }));
+    g.appendChild(svgEl("polygon", { class: "face", points: faces.right, fill: fills.right, stroke: GFX.edge, "stroke-width": 0.6 }));
+    g.appendChild(svgEl("polygon", { class: "face", points: faces.front, fill: fills.front, stroke: GFX.edge, "stroke-width": 0.6 }));
+    g.appendChild(svgEl("polygon", { class: "face", points: faces.top, fill: fills.top, stroke: GFX.edge, "stroke-width": 0.6 }));
     parent.appendChild(g);
     return g;
   }
@@ -377,8 +393,8 @@
     ];
     svg.appendChild(svgEl("polygon", {
       points: floor.map((p) => `${p.x},${p.y}`).join(" "),
-      fill: "#e7e1d4",
-      stroke: "#b9b1a3",
+      fill: GFX.floor,
+      stroke: GFX.floorStroke,
     }));
 
     const wa = [
@@ -389,13 +405,13 @@
     ];
     svg.appendChild(svgEl("polygon", {
       points: wa.map((p) => `${p.x},${p.y}`).join(" "),
-      fill: "#d5e0da",
-      stroke: "#2f5d4c",
+      fill: GFX.wa,
+      stroke: GFX.waStroke,
     }));
     const waLabel = iso(w / 2, -2.2, 0.02, o);
     svg.appendChild(svgEl("text", {
       x: waLabel.x, y: waLabel.y, "text-anchor": "middle",
-      fill: "#2f5d4c", "font-size": 13, "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      fill: GFX.waText, "font-size": 13, "font-family": FONT,
     }, "WARENAUSGANG / KOMMISSIONIERUNG"));
 
     const drawOrder = [...Array(GEO.racks).keys()]
@@ -412,7 +428,7 @@
       const spineX = origin.x;
       const spineY = origin.y + GEO.armM;
       drawBox(group, spineX, spineY, 0, GEO.lengthM, GEO.colM, GEO.heightM, o, {
-        top: "#9aa3aa", front: "#6d757c", right: "#818990",
+        top: GFX.rackTop, front: GFX.rackFront, right: GFX.rackRight,
       }, null);
 
       const rackSlots = state.slots
@@ -429,8 +445,8 @@
       const tag = iso(origin.x + GEO.lengthM / 2, origin.y + RACK_W / 2, GEO.heightM + 0.4, o);
       group.appendChild(svgEl("text", {
         x: tag.x, y: tag.y, "text-anchor": "middle",
-        fill: "#1d232b", "font-size": 12, "font-weight": 600,
-        "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+        fill: GFX.label, "font-size": 12, "font-weight": 600,
+        "font-family": FONT,
       }, `Regal ${rack}`));
       svg.appendChild(group);
     });
@@ -466,15 +482,15 @@
 
     svg.appendChild(svgEl("rect", {
       x: sx(-1.5), y: sy(-waH - 0.8), width: (w + 3) * scale, height: (d + waH + 2.6) * scale,
-      fill: "#e7e1d4", stroke: "#b9b1a3",
+      fill: GFX.floor, stroke: GFX.floorStroke,
     }));
     svg.appendChild(svgEl("rect", {
       x: sx(-1.2), y: sy(-waH), width: (w + 2.4) * scale, height: waH * scale,
-      fill: "#d5e0da", stroke: "#2f5d4c",
+      fill: GFX.wa, stroke: GFX.waStroke,
     }));
     svg.appendChild(svgEl("text", {
       x: sx(w / 2), y: sy(-waH / 2) + 4, "text-anchor": "middle",
-      fill: "#2f5d4c", "font-size": 13, "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      fill: GFX.waText, "font-size": 13, "font-family": FONT,
     }, "WARENAUSGANG"));
 
     for (let rack = 1; rack <= GEO.racks; rack += 1) {
@@ -482,12 +498,12 @@
       const g = svgEl("g", { "data-rack": rack, class: "slot" });
       g.appendChild(svgEl("rect", {
         x: sx(o.x), y: sy(o.y), width: GEO.lengthM * scale, height: RACK_W * scale,
-        fill: "#efe9dc", stroke: "#1d232b",
+        fill: GFX.planRack, stroke: GFX.line,
         "stroke-width": rack === state.selectedRack ? 2.4 : 1.2,
       }));
       g.appendChild(svgEl("rect", {
         x: sx(o.x), y: sy(o.y + GEO.armM), width: GEO.lengthM * scale, height: GEO.colM * scale,
-        fill: "#6d757c",
+        fill: GFX.rackFront,
       }));
 
       state.slots.filter((s) => s.rack === rack).forEach((slot) => {
@@ -517,8 +533,8 @@
 
       g.appendChild(svgEl("text", {
         x: sx(o.x + GEO.lengthM / 2), y: sy(o.y + RACK_W / 2) + 4,
-        "text-anchor": "middle", fill: "#fff", "font-size": 12, "font-weight": 600,
-        "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+        "text-anchor": "middle", fill: GFX.label, "font-size": 12, "font-weight": 600,
+        "font-family": FONT,
       }, `R${rack}`));
       svg.appendChild(g);
     }
@@ -558,8 +574,8 @@
 
     svg.appendChild(svgEl("text", {
       x: padL + arm + colW / 2, y: 20, "text-anchor": "middle",
-      fill: "#1d232b", "font-size": 14, "font-weight": 600,
-      "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      fill: GFX.label, "font-size": 14, "font-weight": 600,
+      "font-family": FONT,
     }, `Regal ${rack} · Querschnitt 8,00 m · 5 Ebenen à 1,60 m`));
 
     const ground = padT + GEO.heightM * scaleZ;
@@ -567,10 +583,10 @@
 
     svg.appendChild(svgEl("line", {
       x1: padL - 20, y1: ground, x2: colX + colW + arm + 20, y2: ground,
-      stroke: "#8f887c", "stroke-width": 2,
+      stroke: GFX.edge, "stroke-width": 2,
     }));
     svg.appendChild(svgEl("rect", {
-      x: colX, y: padT, width: colW, height: GEO.heightM * scaleZ, fill: "#6d757c",
+      x: colX, y: padT, width: colW, height: GEO.heightM * scaleZ, fill: GFX.rackFront,
     }));
 
     ["L", "R"].forEach((side) => {
@@ -579,7 +595,7 @@
         const yArm = zTop + LEVEL_H * scaleZ - 10;
         const x = side === "L" ? colX - arm : colX + colW;
         svg.appendChild(svgEl("rect", {
-          x, y: yArm, width: arm, height: 10, fill: "#9aa3aa",
+          x, y: yArm, width: arm, height: 10, fill: GFX.rackTop,
         }));
       }
     });
@@ -601,7 +617,7 @@
       g.appendChild(svgEl("rect", {
         class: "face",
         x, y: zTop, width: arm - 8, height: h,
-        fill: ZONE_COLOR[z], stroke: "#8f887c",
+        fill: ZONE_COLOR[z], stroke: GFX.edge,
       }));
       const label = slot.article ? slot.article.zone : "";
       if (label) {
@@ -635,13 +651,13 @@
     const elevX = padL + arm + colW + arm + gap;
     svg.appendChild(svgEl("text", {
       x: elevX + GEO.lengthM * scaleX / 2, y: 20, "text-anchor": "middle",
-      fill: "#1d232b", "font-size": 14, "font-weight": 600,
-      "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      fill: GFX.label, "font-size": 14, "font-weight": 600,
+      "font-family": FONT,
     }, `Längsansicht Seite L · 6,00 m`));
 
     svg.appendChild(svgEl("rect", {
       x: elevX + GEO.lengthM * scaleX / 2 - 8, y: padT,
-      width: 16, height: GEO.heightM * scaleZ, fill: "#6d757c",
+      width: 16, height: GEO.heightM * scaleZ, fill: GFX.rackFront,
     }));
 
     state.slots.filter((s) => s.rack === rack && s.side === "L").forEach((slot) => {
@@ -656,12 +672,12 @@
       g.appendChild(svgEl("rect", {
         class: "face",
         x, y, width: BAY_L * scaleX - 6, height: LEVEL_H * scaleZ - 16,
-        fill: ZONE_COLOR[z], stroke: "#8f887c",
+        fill: ZONE_COLOR[z], stroke: GFX.edge,
       }));
       const txt = slot.article ? `${slot.article.zone}  F${slot.bay}` : `F${slot.bay}`;
       g.appendChild(svgEl("text", {
         x: x + (BAY_L * scaleX - 6) / 2, y: y + (LEVEL_H * scaleZ - 16) / 2 + 4,
-        "text-anchor": "middle", fill: slot.article ? "#fff" : "#5d6670", "font-size": 11,
+        "text-anchor": "middle", fill: slot.article ? "#fff" : GFX.muted, "font-size": 11,
       }, txt));
       svg.appendChild(g);
     });
@@ -703,7 +719,7 @@
       const y = t + ph - a.kumuliert * ph;
       d += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
     });
-    svg.appendChild(svgEl("path", { d, fill: "none", stroke: "#1d232b", "stroke-width": 1.4 }));
+    svg.appendChild(svgEl("path", { d, fill: "none", stroke: GFX.line, "stroke-width": 1.4 }));
     const yC = t + ph - state.thrC * ph;
     svg.appendChild(svgEl("line", { x1: l, y1: yC, x2: l + pw, y2: yC, stroke: ZONE_COLOR.C, "stroke-dasharray": "3 3" }));
     svg.appendChild(svgEl("text", { x: 2, y: h - 4, class: "dim-text" }, "Rang"));
@@ -1007,6 +1023,41 @@
       document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("on", b.getAttribute("data-view") === "cut"));
       el("stage-hint").textContent = "Querschnitt und Längsansicht des gewählten Regals. Stellplatz anklicken.";
       render();
+    });
+
+    function openDialog(id) {
+      closeDialogs();
+      const dialog = el(id);
+      if (!dialog) return;
+      dialog.classList.remove("hidden");
+      const btn = id === "dialog-guide" ? el("btn-guide") : el("btn-info");
+      if (btn) btn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeDialogs() {
+      ["dialog-guide", "dialog-info"].forEach((id) => {
+        const dialog = el(id);
+        if (dialog) dialog.classList.add("hidden");
+      });
+      ["btn-guide", "btn-info"].forEach((id) => {
+        const btn = el(id);
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    el("btn-guide").addEventListener("click", () => {
+      if (el("dialog-guide").classList.contains("hidden")) openDialog("dialog-guide");
+      else closeDialogs();
+    });
+    el("btn-info").addEventListener("click", () => {
+      if (el("dialog-info").classList.contains("hidden")) openDialog("dialog-info");
+      else closeDialogs();
+    });
+    document.querySelectorAll("[data-close-dialog]").forEach((node) => {
+      node.addEventListener("click", closeDialogs);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDialogs();
     });
   }
 

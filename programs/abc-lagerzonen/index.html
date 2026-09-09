@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ABC-Lagerzonen · Kragarmregale</title>
   <link rel="icon" type="image/png" href="assets/lagerzonen-icon.png?v=3" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/app.css" />
   <link rel="stylesheet" href="../back.css" />
 </head>
@@ -18,7 +15,21 @@
       <img class="brand-icon" src="assets/lagerzonen-icon.png?v=3" alt="" width="48" height="48" />
       <div>
       <p class="eyebrow">Einrichtungsprogramm</p>
-      <h1>ABC-Lagerzonen</h1>
+      <div class="header-title-row">
+        <h1>ABC-Lagerzonen</h1>
+        <div class="header-guides" role="group" aria-label="Hilfe">
+          <button type="button" class="guide-btn" id="btn-guide" aria-haspopup="dialog" aria-controls="dialog-guide" aria-expanded="false" title="Anleitung">
+            <span class="guide-btn-rim" aria-hidden="true"></span>
+            <span class="guide-btn-core" aria-hidden="true">?</span>
+            <span class="visually-hidden">Anleitung zum Bedienen</span>
+          </button>
+          <button type="button" class="guide-btn guide-btn-info" id="btn-info" aria-haspopup="dialog" aria-controls="dialog-info" aria-expanded="false" title="Info zum Programm">
+            <span class="guide-btn-rim" aria-hidden="true"></span>
+            <span class="guide-btn-core" aria-hidden="true">i</span>
+            <span class="visually-hidden">Info zu ABC-Lagerzonen</span>
+          </button>
+        </div>
+      </div>
       <p class="sub">6 Kragarmregale · beidseitig · 6,00 m × 8,00 m · 5 Ebenen</p>
       </div>
     </div>
@@ -216,6 +227,68 @@
       </table>
     </div>
   </section>
+
+  <div id="dialog-guide" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-guide-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-guide-title">Anleitung</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <ol class="guide-steps">
+          <li>
+            <strong>Artikel einspielen.</strong>
+            CSV laden, Beispieldaten nutzen oder unten Artikelnummer, Bezeichnung und Entnahmen eintragen und mit „In Liste einfügen“ übernehmen.
+          </li>
+          <li>
+            <strong>Schwellen prüfen.</strong>
+            Links die Pareto-Grenzen für C und B einstellen. C sammelt die häufigsten Entnahmen, B den Mittelbereich, der Rest wird A.
+          </li>
+          <li>
+            <strong>Zonen einrichten.</strong>
+            „Zonen einrichten“ verteilt die Artikel auf die 180 Stellplätze: C nah am Warenausgang und unten, B in der Mitte, A oben und hinten.
+          </li>
+          <li>
+            <strong>Lager ansehen.</strong>
+            Zwischen Isometrie, Grundriss und Regalschnitt wechseln. Ein Regal oder einen Stellplatz anklicken, um Belegung und Schnitt zu prüfen.
+          </li>
+          <li>
+            <strong>Eigenes Lager zeichnen.</strong>
+            Unter „Eigenes Lager“ Raummaße setzen, Regale und Objekte auf den Grundriss ziehen, drehen und in Zentimeter bemessen. „Bewegen / Zoom“ schaltet Pan und Mausrad frei.
+          </li>
+          <li>
+            <strong>Ergebnis sichern.</strong>
+            Artikelliste und eigenes Layout werden im Browser gespeichert. Zusätzlich die Zoneneinrichtung als CSV exportieren.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialog-info" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-info-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-info-title">Info zum Programm</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <p>ABC-Lagerzonen richtet Langgut in Kragarmregalen nach Zugriffshäufigkeit ein. Schnelldreher stehen vorn und unten, Langsamdreher weiter hinten und oben.</p>
+        <h3>Wozu es da ist</h3>
+        <p>Es beantwortet die Frage: <em>Wohin</em> gehört welcher Artikel, damit Wege kurz bleiben? Die Zonen folgen den Entnahmen, nicht dem Artikelwert. Deshalb ist C hier der Schnelldreher und A der Langsamdreher – bewusst umgekehrt zur klassischen Wert-ABC-Analyse.</p>
+        <h3>Was das Programm kann</h3>
+        <ul>
+          <li>Artikel nach Entnahmen sortieren und per Pareto in C, B und A teilen (Standard: C bis 80&nbsp;%, B bis 95&nbsp;%, Rest A)</li>
+          <li>180 Stellplätze in 6 beidseitigen Kragarmregalen (6,00&nbsp;m × 8,00&nbsp;m, 5 Ebenen) nach Erreichbarkeit belegen</li>
+          <li>Die Zonen in Isometrie, Grundriss und Regalschnitt zeigen</li>
+          <li>Ein eigenes Lager mit Raummaßen, Raster und Objekten zeichnen</li>
+          <li>Listen und Layouts im Browser halten sowie die Einrichtung als CSV ausgeben</li>
+        </ul>
+        <p>Geeignet ist das Verfahren vor allem für Kommissionierung mit klar unterschiedlicher Zugriffshäufigkeit, etwa Langgut und Profilstahl.</p>
+      </div>
+    </div>
+  </div>
 
   <script src="js/designer.js"></script>
   <script src="js/app.js"></script>

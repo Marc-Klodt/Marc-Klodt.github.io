@@ -4,8 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bestellpunktverfahren</title>
+  <link rel="icon" href="icons/bestellpunkt.ico?v=1" sizes="32x32">
   <link rel="icon" href="icons/bestellpunkt.svg?v=1" type="image/svg+xml">
-  <link rel="icon" type="image/png" href="icons/bestellpunkt-icon.png">
+  <link rel="shortcut icon" href="icons/bestellpunkt.ico?v=1">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="../back.css">
 </head>
@@ -16,7 +17,21 @@
       <div class="header-brand">
         <img src="icons/bestellpunkt.svg?v=1" alt="" class="header-logo" width="44" height="44">
         <div>
-          <h1>Bestellpunktverfahren</h1>
+          <div class="header-title-row">
+            <h1>Bestellpunktverfahren</h1>
+            <div class="header-guides" role="group" aria-label="Hilfe">
+              <button type="button" class="guide-btn" id="btn-guide" aria-haspopup="dialog" aria-controls="dialog-guide" aria-expanded="false" title="Anleitung">
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+                <span class="guide-btn-core" aria-hidden="true">?</span>
+                <span class="visually-hidden">Anleitung zum Bedienen</span>
+              </button>
+              <button type="button" class="guide-btn guide-btn-info" id="btn-info" aria-haspopup="dialog" aria-controls="dialog-info" aria-expanded="false" title="Info zum Programm">
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+                <span class="guide-btn-core" aria-hidden="true">i</span>
+                <span class="visually-hidden">Info zum Bestellpunktverfahren</span>
+              </button>
+            </div>
+          </div>
           <p class="subtitle">Meldebestand, Sicherheitsbestand und Bestellmenge nach (s, Q)</p>
         </div>
       </div>
@@ -163,9 +178,17 @@
     <main class="canvas-area">
       <div class="chart-panels-row" id="usage-bars"></div>
       <div class="canvas-plan">
+        <div class="chart-scale-bar">
+          <span class="chart-scale-label">Diagramm-Bestellmenge</span>
+          <div class="view-tabs" role="tablist" aria-label="Bestellmenge im Diagramm">
+            <button type="button" class="view-tab" data-qty-scale="small" id="scale-small">Klein</button>
+            <button type="button" class="view-tab on" data-qty-scale="calc" id="scale-calc">Berechnet</button>
+            <button type="button" class="view-tab" data-qty-scale="large" id="scale-large">Groß</button>
+          </div>
+        </div>
         <canvas id="rop-canvas" aria-label="Sägezahndiagramm Bestellpunkt"></canvas>
         <div class="canvas-footer">
-          <p class="hint">Bestellung, sobald der verfügbare Bestand den Bestellpunkt s erreicht oder unterschreitet.</p>
+          <p class="hint" id="chart-scale-hint">Bestellung, sobald der verfügbare Bestand den Bestellpunkt s erreicht oder unterschreitet.</p>
           <div class="legend">
             <span><i style="background:#00e5ff"></i>Bestellpunkt</span>
             <span><i style="background:#39ff14"></i>Sicherheitsbestand</span>
@@ -205,6 +228,68 @@
         <p class="formula" id="formula-box"></p>
       </section>
     </aside>
+  </div>
+
+  <div id="dialog-guide" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-guide-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-guide-title">Anleitung</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <ol class="guide-steps">
+          <li>
+            <strong>Artikel wählen oder anlegen.</strong>
+            Links in der Liste einen Artikel anklicken, mit „Neuer Artikel“ ergänzen oder mit „Beispiele“ Testdaten laden.
+          </li>
+          <li>
+            <strong>Bedarf und Wiederbeschaffung eintragen.</strong>
+            Verbrauch, Zeitraum, Streuung σ und Wiederbeschaffungszeit festlegen. Den Sicherheitsbestand über Servicegrad, zusätzliche Tage oder eine feste Menge steuern.
+          </li>
+          <li>
+            <strong>Bestellmenge und Ist-Bestand ergänzen.</strong>
+            Bestellkosten, Stückpreis und Lagerkostensatz ergeben die Andler-Menge Q. Lagerbestand und offene Bestellungen entscheiden, ob bestellt werden muss.
+          </li>
+          <li>
+            <strong>Ergebnis prüfen.</strong>
+            Oben stehen Bestellpunkt s, Menge Q, Status und Reichweite. Rechts erscheint der Bestellvorschlag mit den Kennzahlen und Formeln.
+          </li>
+          <li>
+            <strong>Diagramm umschalten.</strong>
+            In der Mitte das Sägezahndiagramm mit Klein (Skala 1–10), Berechnet oder Groß vergleichen. Der Bestellpunkt bleibt dabei gleich.
+          </li>
+          <li>
+            <strong>Sichern und ausgeben.</strong>
+            Artikel werden automatisch im Browser gespeichert. Zusätzlich JSON speichern oder laden, drucken oder die Übersichtstabelle nutzen.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialog-info" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-info-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-info-title">Info zum Programm</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <p>Das Bestellpunktverfahren (s, Q) ist ein Meldebestandssystem: Der Bestand wird laufend beobachtet. Erreicht oder unterschreitet er den Bestellpunkt s, wird die Menge Q nachbestellt.</p>
+        <h3>Wozu es da ist</h3>
+        <p>Es beantwortet zwei Fragen der Bestandsplanung: <em>Wann</em> muss bestellt werden, und <em>wie viel</em>? So sollen Fehlmengen in der Wiederbeschaffungszeit vermieden und gleichzeitig unnötig hohe Lagerbestände begrenzt werden.</p>
+        <h3>Was das Programm kann</h3>
+        <ul>
+          <li>Bestellpunkt s aus Tagesbedarf, Wiederbeschaffungszeit und Sicherheitsbestand rechnen: <code>s = d · WBZ + SB</code></li>
+          <li>Sicherheitsbestand über Servicegrad (z · σ · √WBZ), Reichweite in Tagen oder eine feste Menge bestimmen</li>
+          <li>Wirtschaftliche Bestellmenge Q nach Andler/Wilson vorschlagen und auf Gebinde sowie Mindestmenge runden</li>
+          <li>Mehrere Artikel verwalten, Ist-Bestand und offene Bestellungen gegen s prüfen und einen Bestellvorschlag anzeigen</li>
+          <li>Den Bestandsverlauf als Sägezahndiagramm zeigen und kleine, berechnete sowie große Lose vergleichen</li>
+        </ul>
+        <p>Geeignet ist das Verfahren vor allem für Artikel mit regelmäßigem, unabhängigem Bedarf und laufender Bestandsführung.</p>
+      </div>
+    </div>
   </div>
 
   <script src="js/calc.js"></script>

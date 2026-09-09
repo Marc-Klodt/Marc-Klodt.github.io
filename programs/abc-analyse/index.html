@@ -11,9 +11,26 @@
 <body>
   <div class="ggl-backbar"><a href="/" target="_top">← Zurück zur Hauptseite</a></div>
   <header class="topbar">
-    <div>
+    <div class="header-brand">
+      <img src="abc-icon.png" alt="" class="header-logo" width="44" height="44">
+      <div>
       <p class="eyebrow">Bestands- und Umsatzklassifikation</p>
-      <h1>ABC-Analyse</h1>
+      <div class="header-title-row">
+        <h1>ABC-Analyse</h1>
+        <div class="header-guides" role="group" aria-label="Hilfe">
+          <button type="button" class="guide-btn" id="btn-guide" aria-haspopup="dialog" aria-controls="dialog-guide" aria-expanded="false" title="Anleitung">
+            <span class="guide-btn-rim" aria-hidden="true"></span>
+            <span class="guide-btn-core" aria-hidden="true">?</span>
+            <span class="visually-hidden">Anleitung zum Bedienen</span>
+          </button>
+          <button type="button" class="guide-btn guide-btn-info" id="btn-info" aria-haspopup="dialog" aria-controls="dialog-info" aria-expanded="false" title="Info zum Programm">
+            <span class="guide-btn-rim" aria-hidden="true"></span>
+            <span class="guide-btn-core" aria-hidden="true">i</span>
+            <span class="visually-hidden">Info zur ABC-Analyse</span>
+          </button>
+        </div>
+      </div>
+      </div>
     </div>
     <div class="topbar-actions">
       <label class="btn ghost">
@@ -117,6 +134,64 @@
       </div>
     </div>
     <div id="pdf-stage" class="pdf-stage"></div>
+  </div>
+
+  <div id="dialog-guide" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-guide-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-guide-title">Anleitung</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <ol class="guide-steps">
+          <li>
+            <strong>Daten bereitstellen.</strong>
+            „Beispieldaten“ laden, eine CSV-Datei einlesen oder Artikel aus Excel in das Feld unter dem Artikelstamm einfügen.
+          </li>
+          <li>
+            <strong>Artikelstamm pflegen.</strong>
+            Bezeichnung, Menge und Stückpreis direkt in der Tabelle ändern. Zeilen hinzufügen oder löschen. Der Jahresverbrauchswert ist Menge × Stückpreis.
+          </li>
+          <li>
+            <strong>A- und B-Grenze einstellen.</strong>
+            Mit den gelben Schiebereglern festlegen, bis zu welchem kumulierten Wertanteil Klasse A bzw. B reicht. Der Rest ist Klasse C.
+          </li>
+          <li>
+            <strong>Grafiken lesen.</strong>
+            Das Pareto-Diagramm zeigt den Wert je Rang und die kumulierte Linie. Die Klassenverteilung vergleicht Wertanteil und Artikelanzahl je Klasse.
+          </li>
+          <li>
+            <strong>Ergebnis sichern.</strong>
+            Über „Ergebnis exportieren“ die PDF-Vorschau öffnen, als PDF drucken oder die klassifizierte Liste als CSV speichern.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialog-info" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-info-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-info-title">Info zum Programm</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <p>Die ABC-Analyse ist eine Pareto-Klassifikation: Wenige Artikel tragen den Großteil des Jahresverbrauchswerts, viele Artikel nur einen kleinen Rest.</p>
+        <h3>Wozu sie da ist</h3>
+        <p>Sie trennt das Sortiment in Steuerungsintensitäten. A-Artikel verdienen enge Bestandsüberwachung, B-Artikel eine mittlere Disposition, C-Artikel eine grobe, aufwandsarme Behandlung.</p>
+        <h3>Was das Programm kann</h3>
+        <ul>
+          <li>Artikel nach Jahresverbrauchswert (Menge × Stückpreis) absteigend sortieren und kumulieren</li>
+          <li>Klassen A, B und C an frei einstellbaren Schwellen zuweisen (Standard 80 % / 95 %)</li>
+          <li>Pareto-Diagramm und Klassenverteilung grafisch darstellen</li>
+          <li>Daten per Tabelle, CSV oder Excel-Einfügen bearbeiten</li>
+          <li>Das Ergebnis als DIN-A4-PDF oder CSV ausgeben</li>
+        </ul>
+        <p>Geeignet ist das Verfahren vor allem für Sortimente mit ungleicher Wertverteilung, etwa Ersatzteile, Handelsware oder Verbrauchsmaterial.</p>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

@@ -21,7 +21,67 @@
     return nice * exp;
   }
 
-  function draw(canvas, result, article) {
+  function roundPack(value, pack) {
+    const step = pack > 0 ? pack : 1;
+    return Math.max(step, Math.round(value / step) * step);
+  }
+
+  function qtyForScale(result, scale) {
+    const r = result || {};
+    const pack = Math.max(r.packSize || 0, 1);
+    const minQty = Math.max(r.minQty || 0, 0);
+    const base = Math.max(r.orderQty || 0, minQty, pack, 1);
+    if (scale === "small") {
+      const raw = Math.max(minQty, pack, base * 0.4);
+      let Q = roundPack(raw, pack);
+      if (Q >= base && base > pack) Q = roundPack(Math.max(pack, base / 2), pack);
+      if (Q >= base && pack === 1 && base > 1) Q = Math.max(1, Math.round(base / 2));
+      return Q;
+    }
+    if (scale === "large") {
+      const raw = Math.max(minQty, base * 2.5, base + pack);
+      return roundPack(raw, pack);
+    }
+    return base;
+  }
+
+  function cycleCount(scale, cycleDays) {
+    if (scale === "small") return 4;
+    if (scale === "large" || cycleDays > 90) return 1.65;
+    if (cycleDays < 12) return 4;
+    return 2.2;
+  }
+
+  function niceTimeMax(value) {
+    if (!(value > 0)) return 1;
+    const exp = Math.pow(10, Math.floor(Math.log10(value)));
+    const n = value / exp;
+    const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+    return nice * exp;
+  }
+
+  function formatTimeTick(t, tMax) {
+    if (tMax <= 2) {
+      const hours = t * 24;
+      if (hours < 1) return global.BestellpunktCalc.formatQty(hours * 60, 0) + " min";
+      return global.BestellpunktCalc.formatQty(hours, hours >= 10 ? 0 : 1) + " h";
+    }
+    return global.BestellpunktCalc.formatQty(t, t >= 10 ? 0 : 1) + " d";
+  }
+
+  function timeTickCount(tMax) {
+    if (tMax <= 1) return 4;
+    if (tMax <= 4) return 4;
+    return 6;
+  }
+
+  const SCALE_LABEL = {
+    small: "kleine Bestellmenge",
+    calc: "berechnete Bestellmenge",
+    large: "große Bestellmenge",
+  };
+
+  function draw(canvas, result, article, options) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
@@ -35,21 +95,33 @@
     ctx.fillStyle = C.bg;
     ctx.fillRect(0, 0, cssW, cssH);
 
-    const pad = { l: 64, r: 28, t: 28, b: 48 };
+    const pad = { l: 64, r: 28, t: 34, b: 52 };
     const w = cssW - pad.l - pad.r;
     const h = cssH - pad.t - pad.b;
     if (w < 40 || h < 40) return;
 
     const r = result || {};
-    const Q = Math.max(r.orderQty || 0, 1);
+    const scale = (options && options.qtyScale) || "calc";
+    const Q = Math.max(qtyForScale(r, scale), 1);
     const ss = Math.max(r.safety || 0, 0);
     const s = Math.max(r.reorderPoint || 0, 0);
     const dDay = Math.max(r.dDay || 0, 0.0001);
     const L = Math.max(r.leadDays || 0, 0);
-    const cycle = Math.max(Q / dDay, L + 1, 1);
-    const cycles = 2;
-    const tMax = cycle * cycles + Math.max(L, cycle * 0.15);
-    const yMax = niceMax(Math.max(ss + Q, s, r.inventoryPosition || 0, r.stock || 0, 1) * 1.12);
+    const current = Math.max(0, r.inventoryPosition || 0);
+    const smallView = scale === "small";
+    const peak = Math.max(ss + Q, s, current, 1);
+    const yFit = smallView && peak > 10 ? 10 / peak : 1;
+    const plotQ = Q * yFit;
+    const plotSs = ss * yFit;
+    const plotS = s * yFit;
+    const plotCurrent = current * yFit;
+    const cycle = smallView
+      ? Math.max(Q / dDay, 0.05)
+      : Math.max(Q / dDay, L + 0.25, 1);
+    const cycles = cycleCount(scale, cycle);
+    const tRaw = cycle * cycles + (smallView ? cycle * 0.05 : Math.max(L * 0.2, cycle * 0.08));
+    const tMax = smallView ? niceTimeMax(tRaw) : tRaw;
+    const yMax = smallView ? 10 : niceMax(peak * 1.12);
 
     const x = (t) => pad.l + (t / tMax) * w;
     const y = (v) => pad.t + h - (v / yMax) * h;
@@ -57,24 +129,35 @@
     ctx.strokeStyle = C.grid;
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 5]);
-    const ticks = 5;
     ctx.font = "11px Segoe UI, system-ui, sans-serif";
     ctx.fillStyle = C.muted;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    for (let i = 0; i <= ticks; i++) {
-      const v = (yMax / ticks) * i;
-      const yy = y(v);
-      ctx.beginPath();
-      ctx.moveTo(pad.l, yy);
-      ctx.lineTo(pad.l + w, yy);
-      ctx.stroke();
-      ctx.fillText(global.BestellpunktCalc.formatQty(v, v >= 100 ? 0 : 1), pad.l - 8, yy);
+    if (smallView) {
+      for (let v = 1; v <= 10; v++) {
+        const yy = y(v);
+        ctx.beginPath();
+        ctx.moveTo(pad.l, yy);
+        ctx.lineTo(pad.l + w, yy);
+        ctx.stroke();
+        ctx.fillText(String(v), pad.l - 8, yy);
+      }
+    } else {
+      const ticks = 5;
+      for (let i = 0; i <= ticks; i++) {
+        const v = (yMax / ticks) * i;
+        const yy = y(v);
+        ctx.beginPath();
+        ctx.moveTo(pad.l, yy);
+        ctx.lineTo(pad.l + w, yy);
+        ctx.stroke();
+        ctx.fillText(global.BestellpunktCalc.formatQty(v, v >= 100 ? 0 : 1), pad.l - 8, yy);
+      }
     }
 
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    const tTicks = 6;
+    const tTicks = timeTickCount(tMax);
     for (let i = 0; i <= tTicks; i++) {
       const t = (tMax / tTicks) * i;
       const xx = x(t);
@@ -82,7 +165,7 @@
       ctx.moveTo(xx, pad.t);
       ctx.lineTo(xx, pad.t + h);
       ctx.stroke();
-      ctx.fillText(global.BestellpunktCalc.formatQty(t, t >= 10 ? 0 : 1) + " d", xx, pad.t + h + 8);
+      ctx.fillText(formatTimeTick(t, tMax), xx, pad.t + h + 8);
     }
     ctx.setLineDash([]);
 
@@ -96,11 +179,12 @@
 
     function stockAt(t) {
       const phase = ((t % cycle) + cycle) % cycle;
+      const dPlot = dDay * yFit;
       if (phase < L) {
-        const atOrder = ss + Q - dDay * (cycle - L);
-        return Math.max(0, atOrder - dDay * phase);
+        const atOrder = plotSs + plotQ - dPlot * (cycle - L);
+        return Math.max(0, atOrder - dPlot * phase);
       }
-      return Math.max(0, ss + Q - dDay * (phase - L));
+      return Math.max(0, plotSs + plotQ - dPlot * (phase - L));
     }
 
     const steps = Math.max(120, Math.floor(w));
@@ -133,7 +217,7 @@
     ctx.shadowBlur = 0;
 
     function hLine(value, color, label, dash) {
-      if (!(value >= 0)) return;
+      if (!(value >= 0) || value > yMax + 1e-6) return;
       const yy = y(value);
       ctx.save();
       ctx.strokeStyle = color;
@@ -153,10 +237,10 @@
       ctx.fillText(label, pad.l + 8, yy - 3);
     }
 
-    hLine(s, C.rop, "Bestellpunkt s = " + global.BestellpunktCalc.formatQty(s), [8, 5]);
-    hLine(ss, C.ss, "Sicherheitsbestand = " + global.BestellpunktCalc.formatQty(ss), [4, 4]);
+    hLine(plotS, C.rop, "Bestellpunkt s = " + global.BestellpunktCalc.formatQty(smallView ? plotS : s), [8, 5]);
+    hLine(plotSs, C.ss, "Sicherheitsbestand = " + global.BestellpunktCalc.formatQty(smallView ? plotSs : ss), [4, 4]);
 
-    if (L > 0) {
+    if (L > 0 && cycle > L) {
       const tOrder = cycle - L;
       ctx.save();
       ctx.strokeStyle = C.rop;
@@ -164,22 +248,21 @@
       ctx.setLineDash([]);
       ctx.globalAlpha = 0.85;
       ctx.beginPath();
-      ctx.moveTo(x(tOrder), y(s));
-      ctx.lineTo(x(cycle), y(ss));
+      ctx.moveTo(x(tOrder), y(plotS));
+      ctx.lineTo(x(cycle), y(plotSs));
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = C.rop;
       ctx.font = "11px Segoe UI, system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillText("WBZ " + global.BestellpunktCalc.formatQty(L, 0) + " d", x(tOrder + L / 2), y(ss) + 6);
+      ctx.fillText("WBZ " + global.BestellpunktCalc.formatQty(L, 0) + " d", x(tOrder + L / 2), y(plotSs) + 6);
       ctx.restore();
     }
 
-    const current = Math.max(0, r.inventoryPosition || 0);
     const tNow = dDay > 0 ? clampTimeOnCycle(current, ss, Q, dDay, L, cycle) : 0;
-    const cx = x(tNow);
-    const cy = y(current);
+    const cx = x(Math.min(tMax, tNow));
+    const cy = y(Math.min(yMax, plotCurrent));
     ctx.beginPath();
     ctx.arc(cx, cy, 8, 0, Math.PI * 2);
     ctx.fillStyle = r.mustOrder ? C.danger : C.stock;
@@ -196,7 +279,14 @@
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
     const name = (article && article.name) || "Artikel";
-    ctx.fillText(name + " – Sägezahndiagramm (s, Q)", pad.l, pad.t - 8);
+    const scaleName = SCALE_LABEL[scale] || SCALE_LABEL.calc;
+    ctx.fillText(
+      smallView
+        ? name + " – kleine Bestellmenge, Bestand 1–10"
+        : name + " – " + scaleName + "  Q = " + global.BestellpunktCalc.formatQty(Q, 0),
+      pad.l,
+      pad.t - 8
+    );
 
     ctx.fillStyle = C.muted;
     ctx.font = "11px Segoe UI, system-ui, sans-serif";
@@ -222,5 +312,5 @@
     return Math.max(0, Math.min(cycle, fromAfter));
   }
 
-  global.BestellpunktChart = { draw };
+  global.BestellpunktChart = { draw, qtyForScale, SCALE_LABEL };
 })(window);

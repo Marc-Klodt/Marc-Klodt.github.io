@@ -15,8 +15,12 @@
     hallHeight: 800,
     wallThickness: 20,
     grid: 10,
+    outerGrid: 100,
+    innerUnit: "cm",
+    outerUnit: "m",
     snap: true,
     showGrid: true,
+    showOuterGrid: true,
     showDims: true,
     outline: { points: [], closed: false },
     openings: [],
@@ -31,6 +35,7 @@
     collidingIds: new Set(),
     outsideIds: new Set(),
     hover: null,
+    draftSegment: null,
   };
 
   const history = [];
@@ -49,12 +54,123 @@
     return Number.isFinite(v) ? v : fallback;
   }
 
-  function snapValue(v) {
-    return state.snap ? G.snap(v, state.grid) : v;
+  const CM_STEPS = [1, 5, 10, 20, 50, 100];
+  const M_STEPS = [0.5, 1, 2, 5];
+
+  function isInsideHall(p) {
+    return Boolean(
+      state.outline.closed
+      && state.outline.points.length >= 3
+      && G.pointInPolygon(p, state.outline.points)
+    );
   }
 
-  function snapP(p) {
-    return state.snap ? G.snapPoint(p, state.grid) : { x: p.x, y: p.y };
+  function gridForZone(zone) {
+    return zone === "outer" ? (state.outerGrid || 100) : (state.grid || 10);
+  }
+
+  function gridAt(p, zone) {
+    if (zone === "inner" || zone === "outer") return gridForZone(zone);
+    if (state.tool === "draw") return gridForZone("outer");
+    if (isInsideHall(p)) return gridForZone("inner");
+    return gridForZone("outer");
+  }
+
+  function snapValue(v, zone) {
+    return state.snap ? G.snap(v, gridForZone(zone || "inner")) : v;
+  }
+
+  function snapP(p, zone) {
+    return state.snap ? G.snapPoint(p, gridAt(p, zone)) : { x: p.x, y: p.y };
+  }
+
+  function snapItemXY(item, x, y) {
+    if (!state.snap) return { x, y };
+    const swapped = item.rot === 90 || item.rot === 270;
+    const bw = swapped ? item.d : item.w;
+    const bd = swapped ? item.w : item.d;
+    const center = { x: x + bw / 2, y: y + bd / 2 };
+    return G.snapRectToGrid(x, y, bw, bd, gridAt(center));
+  }
+
+  function fmtGridLabel(cm, unit) {
+    if (unit === "m") {
+      const m = cm / 100;
+      return `${String(m).replace(".", ",")} m`;
+    }
+    return `${cm} cm`;
+  }
+
+  function fillStepSelect(sel, unit, currentCm) {
+    sel.innerHTML = "";
+    const stepsCm = unit === "m" ? M_STEPS.map((m) => Math.round(m * 100)) : CM_STEPS;
+    stepsCm.forEach((cm, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(cm);
+      opt.textContent = unit === "m"
+        ? `${String(M_STEPS[i]).replace(".", ",")} m`
+        : `${cm} cm`;
+      sel.appendChild(opt);
+    });
+    let best = stepsCm[0];
+    let dist = Infinity;
+    stepsCm.forEach((cm) => {
+      const d = Math.abs(cm - currentCm);
+      if (d < dist) {
+        dist = d;
+        best = cm;
+      }
+    });
+    sel.value = String(best);
+    return best;
+  }
+
+  function syncGridControls() {
+    const snapEl = $("snap-grid");
+    const showEl = $("show-grid");
+    const outerEl = $("show-outer-grid");
+    const dimEl = $("show-dimensions");
+    if (snapEl) snapEl.checked = state.snap;
+    if (showEl) showEl.checked = state.showGrid;
+    if (outerEl) outerEl.checked = state.showOuterGrid;
+    if (dimEl) dimEl.checked = state.showDims;
+    document.querySelectorAll("input[name=inner-unit]").forEach((el) => {
+      el.checked = el.value === state.innerUnit;
+    });
+    document.querySelectorAll("input[name=outer-unit]").forEach((el) => {
+      el.checked = el.value === state.outerUnit;
+    });
+    if ($("grid-in-step")) {
+      state.grid = fillStepSelect($("grid-in-step"), state.innerUnit, state.grid);
+    }
+    if ($("grid-out-step")) {
+      state.outerGrid = fillStepSelect($("grid-out-step"), state.outerUnit, state.outerGrid);
+    }
+  }
+
+  function readGridFromUi() {
+    const inner = document.querySelector("input[name=inner-unit]:checked");
+    const outer = document.querySelector("input[name=outer-unit]:checked");
+    state.innerUnit = inner && inner.value === "m" ? "m" : "cm";
+    state.outerUnit = outer && outer.value === "cm" ? "cm" : "m";
+    state.grid = Number($("grid-in-step").value) || 10;
+    state.outerGrid = Number($("grid-out-step").value) || 100;
+    persist();
+    refresh();
+  }
+
+  function requireHall() {
+    if (state.outline.closed && state.outline.points.length >= 3) return true;
+    window.alert("Bitte zuerst den Hallenumriss schließen oder eine Rechteck-Halle anlegen.");
+    return false;
+  }
+
+  function overlapsBarrier(rect, exceptId) {
+    return state.items.some((it) => (
+      it.id !== exceptId
+      && G.isBarrier(it)
+      && G.rectsOverlap(rect, G.itemBBox(it))
+    ));
   }
 
   function worldFromEvent(evt) {
@@ -101,6 +217,12 @@
       hallHeight: state.hallHeight,
       wallThickness: state.wallThickness,
       grid: state.grid,
+      outerGrid: state.outerGrid,
+      innerUnit: state.innerUnit,
+      outerUnit: state.outerUnit,
+      snap: state.snap,
+      showGrid: state.showGrid,
+      showOuterGrid: state.showOuterGrid,
       outline: state.outline,
       openings: state.openings,
       items: state.items,
@@ -114,6 +236,12 @@
     state.hallHeight = data.hallHeight || 800;
     state.wallThickness = data.wallThickness || 20;
     state.grid = data.grid || 10;
+    state.outerGrid = data.outerGrid || 100;
+    state.innerUnit = data.innerUnit === "m" ? "m" : "cm";
+    state.outerUnit = data.outerUnit === "cm" ? "cm" : "m";
+    state.snap = data.snap !== false;
+    state.showGrid = data.showGrid !== false;
+    state.showOuterGrid = data.showOuterGrid !== false;
     state.outline = data.outline || { points: [], closed: false };
     state.openings = Array.isArray(data.openings) ? data.openings : [];
     state.items = Array.isArray(data.items) ? data.items : [];
@@ -121,7 +249,7 @@
     state.selected = null;
     $("hall-height").value = (state.hallHeight / 100).toFixed(1);
     $("wall-thick").value = state.wallThickness;
-    $("grid-size").value = String(state.grid);
+    syncGridControls();
   }
 
   function restore() {
@@ -137,6 +265,7 @@
 
   function setTool(tool) {
     state.tool = tool;
+    state.draftSegment = null;
     document.querySelectorAll(".tool-btn").forEach((btn) => {
       btn.classList.toggle("on", btn.dataset.tool === tool);
     });
@@ -155,14 +284,19 @@
 
   function updateHint() {
     const hints = {
-      select: "Objekt, Wand oder Eckpunkt anklicken. Ziehen verschiebt. R dreht, Entf löscht.",
+      select: "Objekt anklicken und ziehen zum Versetzen. R dreht, Entf löscht. Wege und Mauern per Rechtsklick oder an den Punkten bearbeiten. Duplizieren nur über das Rechtsklick-Menü.",
       draw: "Klicken setzt Punkte. Linie folgt der Maus in cm. Umschalt = rechtwinklig. Ersten Punkt oder Enter schließt.",
-      door: "An eine Wand klicken. Breite und Höhe vorher einstellen.",
-      gate: "An eine Wand klicken. Torbreite und -höhe vorher einstellen.",
-      window: "An eine Wand klicken. Fensterbreite, Höhe und Brüstung einstellen.",
-      block: "Klicken platziert das Blocklager mit den aktuellen Maßen.",
-      pallet: "Klicken platziert das Palettenregal mit den aktuellen Maßen.",
-      cantilever: "Klicken platziert das Kragarmregal mit den aktuellen Maßen.",
+      door: "An eine Wand klicken. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
+      gate: "An eine Wand klicken. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
+      window: "An eine Wand klicken. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
+      block: "Ein Klick platziert das Blocklager. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
+      pallet: "Ein Klick platziert das Palettenregal. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
+      cantilever: "Ein Klick platziert das Kragarmregal. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
+      wall: "Zwei Punkte klicken: Start und Ende. Mauern sind rot und mindestens 20 cm stark. Danach ziehen zum Versetzen.",
+      line: "Zwei Punkte klicken: Start und Ende der Linie. Danach wieder Auswählen. Auf Linien kann nichts stehen.",
+      path: "Zwei Punkte klicken: Start und Ende des gelben Weges. Danach wieder Auswählen. Auf Wegen kann nichts stehen.",
+      platform: "Ein Klick platziert das Podest. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
+      gallery: "Ein Klick platziert die Empore. Danach wieder Auswählen. Duplizieren nur über Rechtsklick.",
       pan: "Ziehen verschiebt die Ansicht. Mausrad zoomt.",
     };
     if (state.view !== "plan") {
@@ -176,14 +310,21 @@
     const collide = new Set();
     const outside = new Set();
     for (let i = 0; i < state.items.length; i += 1) {
-      const a = G.itemBBox(state.items[i]);
+      const item = state.items[i];
+      if (G.isPath(item)) continue;
+      const a = G.itemBBox(item);
       if (state.outline.closed && !G.rectInsidePolygon(a, state.outline.points)) {
-        outside.add(state.items[i].id);
+        outside.add(item.id);
+      }
+      if (!G.isBarrier(item) && overlapsBarrier(a, item.id)) {
+        collide.add(item.id);
       }
       for (let j = i + 1; j < state.items.length; j += 1) {
-        if (G.rectsOverlap(a, G.itemBBox(state.items[j]))) {
-          collide.add(state.items[i].id);
-          collide.add(state.items[j].id);
+        const other = state.items[j];
+        if (G.isPath(other)) continue;
+        if (G.rectsOverlap(a, G.itemBBox(other)) && !G.allowedOverlap(item, other)) {
+          collide.add(item.id);
+          collide.add(other.id);
         }
       }
     }
@@ -197,6 +338,7 @@
 
   function usedArea() {
     return state.items.reduce((sum, item) => {
+      if (!G.isEquipment(item)) return sum;
       const b = G.itemBBox(item);
       return sum + b.w * b.d;
     }, 0);
@@ -230,21 +372,26 @@
       <div class="header-stat"><strong>${G.fmtM2(area)}</strong>Hallenfläche</div>
       <div class="header-stat"><strong>${G.fmtM2(used)}</strong>belegt</div>
       <div class="header-stat"><strong>${G.fmtM2(free)}</strong>frei</div>
-      <div class="header-stat"><strong>${state.items.length}</strong>Einrichtungen</div>
+      <div class="header-stat"><strong>${state.items.filter((i) => G.isEquipment(i) || G.isSurface(i)).length}</strong>Einrichtungen</div>
     `;
     renderBar($("usage-bar-chart"), "Grundfläche", used / 10000, Math.max(area / 10000, 0.01), "m²");
     renderBar($("height-bar-chart"), "Höhe", maxH / 100, state.hallHeight / 100, "m");
     const pxPerM = state.cam.zoom * 100;
     $("scale-info").textContent = state.view === "plan"
-      ? `Maßstab · ${pxPerM.toFixed(1)} px / m · Raster ${state.grid} cm`
+      ? `Maßstab · ${pxPerM.toFixed(1)} px / m · innen ${fmtGridLabel(state.grid, state.innerUnit)} · außen ${fmtGridLabel(state.outerGrid, state.outerUnit)}`
       : "Aufriss · Höhen in cm";
     $("stat-info").innerHTML = [
       `Wände: ${state.outline.closed ? state.outline.points.length : Math.max(0, state.outline.points.length - 1)}`,
+      `Innenmauern: ${state.items.filter((i) => i.type === "wall").length}`,
+      `Linien: ${state.items.filter((i) => i.type === "line").length}`,
+      `Wege: ${state.items.filter((i) => i.type === "path").length}`,
+      `Podeste: ${state.items.filter((i) => i.type === "platform").length}`,
+      `Emporen: ${state.items.filter((i) => i.type === "gallery").length}`,
       `Öffnungen: ${state.openings.length}`,
       `Blocklager: ${state.items.filter((i) => i.type === "block").length}`,
       `Palettenregale: ${state.items.filter((i) => i.type === "pallet").length}`,
       `Kragarmregale: ${state.items.filter((i) => i.type === "cantilever").length}`,
-      state.collidingIds.size ? `<span class="warning">Überlappungen: ${state.collidingIds.size}</span>` : "Keine Überlappung",
+      state.collidingIds.size ? `<span class="warning">Konflikt (Überlappung oder auf Mauer/Linie/Weg): ${state.collidingIds.size}</span>` : "Keine Überlappung",
       state.outsideIds.size ? `<span class="warning">Außerhalb der Halle: ${state.outsideIds.size}</span>` : "",
     ].filter(Boolean).join("<br>");
     updateDetail();
@@ -266,10 +413,71 @@
     const opening = selectedOpening();
     const canEdit = Boolean(item || opening || (state.selected && (state.selected.kind === "edge" || state.selected.kind === "vertex")));
     $("btn-rotate").disabled = !item;
-    $("btn-dup").disabled = !item;
     $("btn-delete").disabled = !canEdit;
 
     if (item) {
+      if (item.type === "path") {
+        box.innerHTML = `
+          <div class="detail-card">
+            <div class="detail-name">${escapeHtml(item.name)}</div>
+            <label>Bezeichnung
+              <input type="text" id="detail-path-name" maxlength="40" value="${escapeHtml(item.name)}">
+            </label>
+            <label>Länge (cm)
+              <input type="number" id="detail-path-len" min="40" max="50000" step="1" value="${Math.round(item.w)}">
+            </label>
+            <label>Wegbreite (cm)
+              <input type="number" id="detail-path-width" min="40" max="2000" step="1" value="${Math.round(item.d)}">
+            </label>
+            <dl class="detail-list">
+              <dt>Markierung</dt><dd>gelb</dd>
+              <dt>Position</dt><dd>${Math.round(item.x)} / ${Math.round(item.y)} cm</dd>
+              <dt>Stellfläche</dt><dd class="warn">keine Platzierung</dd>
+            </dl>
+            <p class="panel-note">Rechtsklick öffnet dieselben Felder. Quadrate an den Längsseiten ändern die Breite, Kreise an den Enden die Länge.</p>
+          </div>`;
+        const applyDetailPath = () => {
+          applyPathEdit(item, {
+            name: $("detail-path-name").value,
+            length: num("detail-path-len", item.w),
+            width: num("detail-path-width", item.d),
+          });
+        };
+        ["detail-path-name", "detail-path-len", "detail-path-width"].forEach((id) => {
+          const el = $(id);
+          if (el) el.addEventListener("change", applyDetailPath);
+        });
+        return;
+      }
+      if (item.type === "wall") {
+        box.innerHTML = `
+          <div class="detail-card">
+            <div class="detail-name">${escapeHtml(item.name)}</div>
+            <label>Länge (cm)
+              <input type="number" id="detail-wall-len" min="20" max="50000" step="1" value="${Math.round(item.w)}">
+            </label>
+            <label>Stärke (cm)
+              <input type="number" id="detail-wall-thick" min="20" max="80" step="1" value="${Math.round(item.d)}">
+            </label>
+            <dl class="detail-list">
+              <dt>Farbe</dt><dd>rot</dd>
+              <dt>Position</dt><dd>${Math.round(item.x)} / ${Math.round(item.y)} cm</dd>
+              <dt>Stellfläche</dt><dd class="warn">keine Platzierung</dd>
+            </dl>
+            <p class="panel-note">Die Mauer ziehen, um sie zu versetzen. Quadrate ändern die Stärke (mindestens 20 cm), Kreise die Länge.</p>
+          </div>`;
+        const applyDetailWall = () => {
+          applyWallEdit(item, {
+            length: num("detail-wall-len", item.w),
+            width: num("detail-wall-thick", item.d),
+          });
+        };
+        ["detail-wall-len", "detail-wall-thick"].forEach((id) => {
+          const el = $(id);
+          if (el) el.addEventListener("change", applyDetailWall);
+        });
+        return;
+      }
       const b = G.itemBBox(item);
       const inside = !state.outsideIds.has(item.id);
       const tall = item.h > state.hallHeight;
@@ -285,6 +493,8 @@
             <dt>In der Halle</dt><dd class="${inside ? "" : "warn"}">${inside ? "ja" : "ragt hinaus"}</dd>
             ${item.type === "pallet" ? `<dt>Felder / Ebenen</dt><dd>${item.bays} / ${item.levels}</dd>` : ""}
             ${item.type === "cantilever" ? `<dt>Ständer / Ebenen</dt><dd>${item.columns} / ${item.levels} · ${item.sided === "double" ? "beidseitig" : "einseitig"}</dd>` : ""}
+            ${G.isSurface(item) ? `<dt>Tragfläche</dt><dd>Regale dürfen hier stehen</dd>` : ""}
+            ${G.isBarrier(item) ? `<dt>Stellfläche</dt><dd class="warn">keine Platzierung</dd>` : ""}
           </dl>
         </div>`;
       return;
@@ -355,11 +565,39 @@
     refresh();
   }
 
+  function itemPickRect(item, pick) {
+    const b = G.itemBBox(item);
+    if (item.type !== "wall" && item.type !== "line") return b;
+    const pad = Math.max(pick, 18);
+    const swapped = item.rot === 90 || item.rot === 270;
+    if (swapped) {
+      return { x: b.x - pad, y: b.y, w: b.w + pad * 2, d: b.d };
+    }
+    return { x: b.x, y: b.y - pad, w: b.w, d: b.d + pad * 2 };
+  }
+
   function hitTest(world) {
-    const pick = 12 / state.cam.zoom;
-    for (let i = state.items.length - 1; i >= 0; i -= 1) {
-      if (G.pointInRect(world, G.itemBBox(state.items[i]))) {
-        return { kind: "item", id: state.items[i].id };
+    const pick = 14 / state.cam.zoom;
+    const selected = selectedItem();
+    if (selected && (selected.type === "path" || selected.type === "wall")) {
+      const ends = G.pathEndPoints(selected);
+      for (let i = 0; i < ends.length; i += 1) {
+        if (G.dist(world, ends[i]) <= pick) {
+          return { kind: "path-end", id: selected.id, end: i };
+        }
+      }
+      const sides = G.pathSidePoints(selected);
+      for (let i = 0; i < sides.length; i += 1) {
+        if (G.dist(world, sides[i]) <= pick) {
+          return { kind: "path-side", id: selected.id, side: i };
+        }
+      }
+    }
+    const rank = (item) => (G.isBarrier(item) ? 2 : G.isSurface(item) ? 0 : 1);
+    const ordered = state.items.slice().sort((a, b) => rank(b) - rank(a));
+    for (let i = 0; i < ordered.length; i += 1) {
+      if (G.pointInRect(world, itemPickRect(ordered[i], pick))) {
+        return { kind: "item", id: ordered[i].id };
       }
     }
     if (state.outline.points.length) {
@@ -407,7 +645,7 @@
     state.openings.push(opening);
     state.selected = { kind: "opening", id: opening.id };
     persist();
-    refresh();
+    setTool("select");
   }
 
   function currentStamp(type) {
@@ -434,6 +672,26 @@
         rot: 0,
       };
     }
+    if (type === "platform") {
+      return {
+        type: "platform",
+        name: $("plat-name").value || "Podest",
+        w: snapValue(num("plat-w", 400)),
+        d: snapValue(num("plat-d", 240)),
+        h: num("plat-h", 80),
+        rot: 0,
+      };
+    }
+    if (type === "gallery") {
+      return {
+        type: "gallery",
+        name: $("gal-name").value || "Empore",
+        w: snapValue(num("gal-w", 800)),
+        d: snapValue(num("gal-d", 600)),
+        h: num("gal-h", 350),
+        rot: 0,
+      };
+    }
     const sided = $("cant-sided").value;
     const arm = snapValue(num("cant-arm", 120));
     return {
@@ -451,8 +709,16 @@
   }
 
   function placeItem(type, world) {
-    pushHistory();
+    if (!requireHall()) return;
     const stamp = currentStamp(type);
+    const pos = snapItemXY(stamp, world.x - stamp.w / 2, world.y - stamp.d / 2);
+    stamp.x = pos.x;
+    stamp.y = pos.y;
+    if (overlapsBarrier(G.itemBBox(stamp))) {
+      window.alert("Auf Mauern, Linien und Wegen kann nichts gestellt werden.");
+      return;
+    }
+    pushHistory();
     const item = {
       ...stamp,
       id: G.uid(type, state.seq),
@@ -460,12 +726,66 @@
     state.seq += 1;
     const names = state.items.filter((i) => i.type === type).length + 1;
     if (!stamp.name.match(/\d+$/)) item.name = `${stamp.name} ${names}`;
-    item.x = snapValue(world.x - item.w / 2);
-    item.y = snapValue(world.y - item.d / 2);
     state.items.push(item);
     state.selected = { kind: "item", id: item.id };
     persist();
-    refresh();
+    setTool("select");
+  }
+
+  function finishSegment(type, start, end) {
+    if (!requireHall()) return;
+    const a = snapP(start);
+    let b = G.orthoFrom(a, end);
+    b = snapP(b);
+    const horizontal = Math.abs(b.x - a.x) >= Math.abs(b.y - a.y);
+    const len = horizontal ? Math.abs(b.x - a.x) : Math.abs(b.y - a.y);
+    if (len < state.grid) return;
+    let thick;
+    let height;
+    let name;
+    if (type === "line") {
+      thick = Math.max(state.grid, 8);
+      height = 0;
+      name = "Linie";
+    } else if (type === "path") {
+      thick = clampPathWidth(num("path-width", 250));
+      height = 0;
+      name = "Weg";
+    } else {
+      thick = clampWallThick(num("inner-wall-thick", 20));
+      height = num("inner-wall-h", state.hallHeight);
+      name = "Mauer";
+    }
+    const item = {
+      type,
+      name,
+      w: snapValue(len),
+      d: thick,
+      h: height,
+      rot: horizontal ? 0 : 90,
+      x: 0,
+      y: 0,
+    };
+    if (horizontal) {
+      item.x = Math.min(a.x, b.x);
+      item.y = snapValue(a.y - thick / 2);
+    } else {
+      item.x = snapValue(a.x - thick / 2);
+      item.y = Math.min(a.y, b.y);
+    }
+    const pos = snapItemXY(item, item.x, item.y);
+    item.x = pos.x;
+    item.y = pos.y;
+    pushHistory();
+    item.id = G.uid(type, state.seq);
+    state.seq += 1;
+    const names = state.items.filter((i) => i.type === type).length + 1;
+    item.name = `${item.name} ${names}`;
+    state.items.push(item);
+    state.selected = { kind: "item", id: item.id };
+    state.draftSegment = null;
+    persist();
+    setTool("select");
   }
 
   function rotateItem(item) {
@@ -476,6 +796,9 @@
     const next = G.itemBBox(item);
     item.x = cx - next.w / 2;
     item.y = cy - next.d / 2;
+    const pos = snapItemXY(item, item.x, item.y);
+    item.x = pos.x;
+    item.y = pos.y;
   }
 
   function deleteSelected() {
@@ -509,10 +832,11 @@
       ...item,
       id: G.uid(item.type, state.seq),
       name: `${item.name} Kopie`,
-      x: item.x + state.grid * 2,
-      y: item.y + state.grid * 2,
     };
     state.seq += 1;
+    const pos = snapItemXY(copy, item.x + state.grid * 2, item.y + state.grid * 2);
+    copy.x = pos.x;
+    copy.y = pos.y;
     state.items.push(copy);
     state.selected = { kind: "item", id: copy.id };
     persist();
@@ -530,8 +854,8 @@
   }
 
   function makeRectHall() {
-    const length = Math.max(100, num("hall-length", 40) * 100);
-    const width = Math.max(100, num("hall-width", 25) * 100);
+    const length = Math.max(100, snapValue(num("hall-length", 40) * 100, "outer"));
+    const width = Math.max(100, snapValue(num("hall-width", 25) * 100, "outer"));
     pushHistory();
     state.outline = {
       closed: true,
@@ -547,6 +871,119 @@
     state.wallThickness = num("wall-thick", 20);
     persist();
     fitView();
+  }
+
+  function clampWallThick(v) {
+    const n = Math.round(Number(v));
+    if (!Number.isFinite(n)) return 20;
+    return Math.max(20, Math.min(80, n));
+  }
+
+  function clampPathWidth(v) {
+    const n = Math.round(Number(v));
+    if (!Number.isFinite(n)) return 250;
+    return Math.max(40, Math.min(2000, n));
+  }
+
+  function applyPathEdit(item, fields, options) {
+    if (!item || item.type !== "path") return;
+    const opts = options || {};
+    if (!opts.skipHistory) pushHistory();
+    if (fields.name != null) {
+      const name = String(fields.name).trim();
+      if (name) item.name = name;
+    }
+    const box = G.itemBBox(item);
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.d / 2;
+    if (fields.length != null) {
+      const length = Number(fields.length);
+      if (Number.isFinite(length)) item.w = Math.max(40, snapValue(length));
+    }
+    if (fields.width != null) {
+      const width = Number(fields.width);
+      if (Number.isFinite(width)) item.d = clampPathWidth(width);
+    }
+    const next = G.itemBBox(item);
+    item.x = cx - next.w / 2;
+    item.y = cy - next.d / 2;
+    const pos = snapItemXY(item, item.x, item.y);
+    item.x = pos.x;
+    item.y = pos.y;
+    if ($("path-width")) $("path-width").value = Math.round(item.d);
+    persist();
+    refresh();
+    syncContextPathFields(item);
+  }
+
+  function syncContextPathFields(item) {
+    const path = item && item.type === "path" ? item : null;
+    const box = $("context-path-edit");
+    if (!box) return;
+    box.classList.toggle("hidden", !path);
+    if (!path) return;
+    const nameEl = $("ctx-path-name");
+    const lenEl = $("ctx-path-len");
+    const widthEl = $("ctx-path-width");
+    if (nameEl) nameEl.value = path.name;
+    if (lenEl) lenEl.value = String(Math.round(path.w));
+    if (widthEl) widthEl.value = String(Math.round(path.d));
+  }
+
+  function applyPathFromContext() {
+    const item = selectedItem();
+    if (!item || item.type !== "path") return;
+    applyPathEdit(item, {
+      name: $("ctx-path-name").value,
+      length: num("ctx-path-len", item.w),
+      width: num("ctx-path-width", item.d),
+    });
+  }
+
+  function setPathWidthFromHandle(item, sideIndex, world) {
+    const b = G.itemBBox(item);
+    const swapped = item.rot === 90 || item.rot === 270;
+    const clamp = item.type === "wall" ? clampWallThick : clampPathWidth;
+    if (!swapped) {
+      const centerY = b.y + b.d / 2;
+      item.d = clamp(Math.abs(world.y - centerY) * 2);
+      item.y = centerY - item.d / 2;
+    } else {
+      const centerX = b.x + b.w / 2;
+      item.d = clamp(Math.abs(world.x - centerX) * 2);
+      item.x = centerX - item.d / 2;
+    }
+    if (item.type === "path" && $("path-width")) $("path-width").value = String(Math.round(item.d));
+    if (item.type === "wall" && $("inner-wall-thick")) $("inner-wall-thick").value = String(Math.round(item.d));
+  }
+
+  function setPathEnd(item, endIndex, world) {
+    const b = G.itemBBox(item);
+    const swapped = item.rot === 90 || item.rot === 270;
+    if (!swapped) {
+      const fixedX = endIndex === 0 ? b.x + b.w : b.x;
+      const movingX = snapValue(world.x);
+      const x0 = Math.min(fixedX, movingX);
+      const x1 = Math.max(fixedX, movingX);
+      const len = x1 - x0;
+      if (len < state.grid) return;
+      item.w = snapValue(len);
+      item.x = x0;
+      item.y = snapValue(b.y + b.d / 2 - item.d / 2);
+    } else {
+      const fixedY = endIndex === 0 ? b.y + b.d : b.y;
+      const movingY = snapValue(world.y);
+      const y0 = Math.min(fixedY, movingY);
+      const y1 = Math.max(fixedY, movingY);
+      const len = y1 - y0;
+      if (len < state.grid) return;
+      item.w = snapValue(len);
+      item.x = snapValue(b.x + b.w / 2 - item.d / 2);
+      item.y = y0;
+    }
+    const pos = snapItemXY(item, item.x, item.y);
+    item.x = pos.x;
+    item.y = pos.y;
   }
 
   function applyHallFields() {
@@ -582,7 +1019,49 @@
       item.h = num("cant-h", item.h);
       item.columns = Math.max(2, Math.round(num("cant-cols", item.columns)));
       item.levels = Math.max(1, Math.round(num("cant-levels", item.levels)));
+    } else if (item.type === "platform") {
+      item.name = $("plat-name").value || item.name;
+      item.w = snapValue(num("plat-w", item.w));
+      item.d = snapValue(num("plat-d", item.d));
+      item.h = num("plat-h", item.h);
+    } else if (item.type === "gallery") {
+      item.name = $("gal-name").value || item.name;
+      item.w = snapValue(num("gal-w", item.w));
+      item.d = snapValue(num("gal-d", item.d));
+      item.h = num("gal-h", item.h);
+    } else if (item.type === "wall") {
+      item.d = clampWallThick(num("inner-wall-thick", item.d));
+      item.h = num("inner-wall-h", item.h);
+    } else if (item.type === "path") {
+      applyPathEdit(item, { width: num("path-width", item.d) }, { skipHistory: true });
+      return;
     }
+    persist();
+    refresh();
+  }
+
+  function applyWallEdit(item, fields, options) {
+    if (!item || item.type !== "wall") return;
+    const opts = options || {};
+    if (!opts.skipHistory) pushHistory();
+    const box = G.itemBBox(item);
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.d / 2;
+    if (fields.length != null) {
+      const length = Number(fields.length);
+      if (Number.isFinite(length)) item.w = Math.max(20, snapValue(length));
+    }
+    if (fields.width != null) {
+      const width = Number(fields.width);
+      if (Number.isFinite(width)) item.d = clampWallThick(width);
+    }
+    const next = G.itemBBox(item);
+    item.x = cx - next.w / 2;
+    item.y = cy - next.d / 2;
+    const pos = snapItemXY(item, item.x, item.y);
+    item.x = pos.x;
+    item.y = pos.y;
+    if ($("inner-wall-thick")) $("inner-wall-thick").value = String(Math.round(item.d));
     persist();
     refresh();
   }
@@ -632,6 +1111,21 @@
       $("cant-levels").value = item.levels;
       $("cant-cols").value = item.columns;
       $("cant-sided").value = item.sided;
+    } else if (item.type === "platform") {
+      $("plat-name").value = item.name;
+      $("plat-w").value = Math.round(item.w);
+      $("plat-d").value = Math.round(item.d);
+      $("plat-h").value = Math.round(item.h);
+    } else if (item.type === "gallery") {
+      $("gal-name").value = item.name;
+      $("gal-w").value = Math.round(item.w);
+      $("gal-d").value = Math.round(item.d);
+      $("gal-h").value = Math.round(item.h);
+    } else if (item.type === "wall") {
+      $("inner-wall-thick").value = Math.round(item.d);
+      $("inner-wall-h").value = Math.round(item.h || 0);
+    } else if (item.type === "path") {
+      $("path-width").value = Math.round(item.d);
     }
   }
 
@@ -649,6 +1143,17 @@
 
   function liveDimText(evt) {
     if (state.view !== "plan") return "";
+    if (drag && drag.kind === "path-side") {
+      const item = state.items.find((i) => i.id === drag.id);
+      if (item) return `${item.type === "wall" ? "Stärke" : "Breite"} ${G.fmtCm(item.d)}`;
+    }
+    if ((state.tool === "wall" || state.tool === "line" || state.tool === "path") && state.draftSegment && state.draftSegment.start) {
+      const from = state.draftSegment.start;
+      let target = state.cursorWorld;
+      if (!target) return "";
+      target = G.orthoFrom(from, target);
+      return G.fmtCmM(G.dist(from, target));
+    }
     if (state.tool === "draw" && state.outline.points.length) {
       const last = state.outline.points[state.outline.points.length - 1];
       let target = state.cursorWorld;
@@ -674,11 +1179,13 @@
   }
 
   function onPointerDown(evt) {
-    if (evt.button === 1 || state.tool === "pan" || spacePan) {
+    if (evt.button === 0) hideMenu();
+    if (evt.button === 1 || ((state.tool === "pan" || spacePan) && evt.button === 0)) {
       drag = { kind: "pan", x: evt.clientX, y: evt.clientY, camX: state.cam.x, camY: state.cam.y };
       canvas.setPointerCapture(evt.pointerId);
       return;
     }
+    if (evt.button !== 0) return;
     if (state.view !== "plan") return;
     const world = snapP(worldFromEvent(evt));
     state.cursorWorld = world;
@@ -694,7 +1201,7 @@
         pushHistory();
       }
       const pts = state.outline.points;
-      if (pts.length >= 3 && G.dist(world, pts[0]) <= Math.max(state.grid, 20)) {
+      if (pts.length >= 3 && G.dist(world, pts[0]) <= Math.max(state.outerGrid, 20)) {
         closeOutline();
         return;
       }
@@ -710,17 +1217,46 @@
       placeOpening(state.tool, world);
       return;
     }
-    if (state.tool === "block" || state.tool === "pallet" || state.tool === "cantilever") {
+    if (state.tool === "wall" || state.tool === "line" || state.tool === "path") {
+      if (!state.draftSegment) {
+        if (!requireHall()) return;
+        const thick = state.tool === "wall"
+          ? clampWallThick(num("inner-wall-thick", 20))
+          : state.tool === "path"
+            ? clampPathWidth(num("path-width", 250))
+            : Math.max(state.grid, 8);
+        state.draftSegment = {
+          type: state.tool,
+          start: world,
+          thick,
+        };
+        refresh();
+        return;
+      }
+      finishSegment(state.tool, state.draftSegment.start, world);
+      return;
+    }
+    if (state.tool === "block" || state.tool === "pallet" || state.tool === "cantilever" || state.tool === "platform" || state.tool === "gallery") {
       placeItem(state.tool, world);
       return;
     }
 
     const hit = hitTest(worldFromEvent(evt));
-    state.selected = hit;
+    if (hit && (hit.kind === "path-end" || hit.kind === "path-side")) {
+      state.selected = { kind: "item", id: hit.id };
+    } else {
+      state.selected = hit;
+    }
     fillFormsFromSelection();
     if (hit && hit.kind === "item") {
       const item = selectedItem();
       drag = { kind: "item", id: item.id, dx: world.x - item.x, dy: world.y - item.y };
+      pushHistory();
+    } else if (hit && hit.kind === "path-end") {
+      drag = { kind: "path-end", id: hit.id, end: hit.end };
+      pushHistory();
+    } else if (hit && hit.kind === "path-side") {
+      drag = { kind: "path-side", id: hit.id, side: hit.side };
       pushHistory();
     } else if (hit && hit.kind === "vertex") {
       drag = { kind: "vertex", index: hit.index };
@@ -740,6 +1276,13 @@
     state.shiftOrtho = evt.shiftKey;
     const screen = R.canvasPoint(evt, canvas);
     state.cursorWorld = R.screenToWorld(screen, state.cam, viewSize);
+    if (!drag && state.snap && state.view === "plan") {
+      if (state.tool === "draw") {
+        state.cursorWorld = snapP(state.cursorWorld, "outer");
+      } else if (state.tool === "wall" || state.tool === "line" || state.tool === "path") {
+        state.cursorWorld = snapP(state.cursorWorld);
+      }
+    }
     if (drag && drag.kind === "pan") {
       state.cam.x = drag.camX - (evt.clientX - drag.x) / state.cam.zoom;
       state.cam.y = drag.camY - (evt.clientY - drag.y) / state.cam.zoom;
@@ -749,16 +1292,23 @@
     if (drag && drag.kind === "item") {
       const item = state.items.find((i) => i.id === drag.id);
       if (item) {
-        item.x = snapValue(state.cursorWorld.x - drag.dx);
-        item.y = snapValue(state.cursorWorld.y - drag.dy);
+        const pos = snapItemXY(item, state.cursorWorld.x - drag.dx, state.cursorWorld.y - drag.dy);
+        item.x = pos.x;
+        item.y = pos.y;
       }
+    } else if (drag && drag.kind === "path-end") {
+      const item = state.items.find((i) => i.id === drag.id);
+      if (item) setPathEnd(item, drag.end, state.cursorWorld);
+    } else if (drag && drag.kind === "path-side") {
+      const item = state.items.find((i) => i.id === drag.id);
+      if (item) setPathWidthFromHandle(item, drag.side, state.cursorWorld);
     } else if (drag && drag.kind === "vertex") {
       let p = state.cursorWorld;
       if (state.shiftOrtho && state.outline.points.length > 1) {
         const prev = state.outline.points[(drag.index - 1 + state.outline.points.length) % state.outline.points.length];
         p = G.orthoFrom(prev, p);
       }
-      state.outline.points[drag.index] = snapP(p);
+      state.outline.points[drag.index] = snapP(p, "outer");
     } else if (drag && drag.kind === "opening") {
       const opening = state.openings.find((o) => o.id === drag.id);
       const edge = G.nearestEdge(state.cursorWorld, state.outline.points, true);
@@ -773,7 +1323,7 @@
   }
 
   function onPointerUp() {
-    if (drag && (drag.kind === "item" || drag.kind === "vertex" || drag.kind === "opening")) persist();
+    if (drag && (drag.kind === "item" || drag.kind === "vertex" || drag.kind === "opening" || drag.kind === "path-end" || drag.kind === "path-side")) persist();
     drag = null;
     refresh();
   }
@@ -790,19 +1340,48 @@
     refresh();
   }
 
+  function syncContextMenu() {
+    const menu = $("context-menu");
+    const item = selectedItem();
+    const canEdit = Boolean(item || selectedOpening() || (state.selected && (state.selected.kind === "edge" || state.selected.kind === "vertex")));
+    const undoBtn = menu.querySelector('[data-action="undo"]');
+    const rotateBtn = menu.querySelector('[data-action="rotate"]');
+    const dupBtn = menu.querySelector('[data-action="dup"]');
+    const deleteBtn = menu.querySelector('[data-action="delete"]');
+    if (undoBtn) undoBtn.disabled = history.length === 0;
+    if (rotateBtn) rotateBtn.disabled = !item;
+    if (dupBtn) dupBtn.disabled = !item;
+    if (deleteBtn) deleteBtn.disabled = !canEdit;
+    syncContextPathFields(item);
+  }
+
   function onContextMenu(evt) {
     evt.preventDefault();
     const world = worldFromEvent(evt);
     const hit = hitTest(world);
-    if (hit) {
+    if (hit && (hit.kind === "item" || hit.kind === "path-end" || hit.kind === "path-side")) {
+      state.selected = { kind: "item", id: hit.id };
+      fillFormsFromSelection();
+    } else if (hit) {
       state.selected = hit;
       fillFormsFromSelection();
     }
     const menu = $("context-menu");
     menu.style.left = `${evt.clientX}px`;
     menu.style.top = `${evt.clientY}px`;
+    syncContextMenu();
     menu.classList.remove("hidden");
     refresh();
+    const path = selectedItem();
+    if (path && path.type === "path") {
+      const widthEl = $("ctx-path-width");
+      if (widthEl) {
+        window.requestAnimationFrame(() => {
+          widthEl.focus();
+          widthEl.select();
+        });
+      }
+    }
   }
 
   function hideMenu() {
@@ -850,6 +1429,12 @@
       { id: "cant-2", type: "cantilever", name: "Kragarmregal 2", x: 3560, y: 80, w: 600, d: 160, h: 800, rot: 90, arm: 120, sided: "single", columns: 4, levels: 5 },
       { id: "block-1", type: "block", name: "Blocklager WE", x: 1400, y: 1700, w: 800, d: 480, h: 180, rot: 0 },
       { id: "block-2", type: "block", name: "Blocklager WA", x: 2400, y: 1700, w: 640, d: 400, h: 160, rot: 0 },
+      { id: "wall-1", type: "wall", name: "Innenmauer 1", x: 2290, y: 200, w: 1200, d: 20, h: 800, rot: 90 },
+      { id: "line-1", type: "line", name: "Linie 1", x: 80, y: 1480, w: 1800, d: 10, h: 0, rot: 0 },
+      { id: "path-1", type: "path", name: "Weg 1", x: 80, y: 1180, w: 1800, d: 250, h: 0, rot: 0 },
+      { id: "gallery-1", type: "gallery", name: "Empore 1", x: 1400, y: 80, w: 800, d: 700, h: 350, rot: 0 },
+      { id: "platform-1", type: "platform", name: "Podest 1", x: 3140, y: 1760, w: 400, d: 240, h: 80, rot: 0 },
+      { id: "pallet-4", type: "pallet", name: "Palettenregal Empore", x: 1480, y: 160, w: 360, d: 110, h: 450, rot: 0, bays: 3, levels: 3, firstBeam: 20 },
     ];
     state.seq = 20;
     state.selected = null;
@@ -920,6 +1505,46 @@
     document.querySelectorAll(".view-tab").forEach((btn) => {
       btn.addEventListener("click", () => setView(btn.dataset.view));
     });
+
+    function openDialog(id) {
+      closeDialogs();
+      hideMenu();
+      const dialog = $(id);
+      if (!dialog) return;
+      dialog.classList.remove("hidden");
+      const btn = id === "dialog-guide" ? $("btn-guide") : $("btn-info");
+      if (btn) btn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeDialogs() {
+      ["dialog-guide", "dialog-info"].forEach((id) => {
+        const dialog = $(id);
+        if (dialog) dialog.classList.add("hidden");
+      });
+      ["btn-guide", "btn-info"].forEach((id) => {
+        const btn = $(id);
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    function isDialogOpen() {
+      return ["dialog-guide", "dialog-info"].some((id) => {
+        const dialog = $(id);
+        return dialog && !dialog.classList.contains("hidden");
+      });
+    }
+
+    $("btn-guide").addEventListener("click", () => {
+      if ($("dialog-guide").classList.contains("hidden")) openDialog("dialog-guide");
+      else closeDialogs();
+    });
+    $("btn-info").addEventListener("click", () => {
+      if ($("dialog-info").classList.contains("hidden")) openDialog("dialog-info");
+      else closeDialogs();
+    });
+    document.querySelectorAll("[data-close-dialog]").forEach((el) => {
+      el.addEventListener("click", closeDialogs);
+    });
     $("btn-rect-hall").addEventListener("click", makeRectHall);
     $("btn-draw-outline").addEventListener("click", () => setTool("draw"));
     $("btn-close-outline").addEventListener("click", closeOutline);
@@ -929,6 +1554,11 @@
     $("btn-place-block").addEventListener("click", () => setTool("block"));
     $("btn-place-pallet").addEventListener("click", () => setTool("pallet"));
     $("btn-place-cantilever").addEventListener("click", () => setTool("cantilever"));
+    $("btn-place-wall").addEventListener("click", () => setTool("wall"));
+    $("btn-place-line").addEventListener("click", () => setTool("line"));
+    $("btn-place-path").addEventListener("click", () => setTool("path"));
+    $("btn-place-platform").addEventListener("click", () => setTool("platform"));
+    $("btn-place-gallery").addEventListener("click", () => setTool("gallery"));
     $("btn-undo").addEventListener("click", undo);
     $("btn-fit").addEventListener("click", fitView);
     $("btn-rotate").addEventListener("click", () => {
@@ -939,7 +1569,6 @@
       persist();
       refresh();
     });
-    $("btn-dup").addEventListener("click", duplicateSelected);
     $("btn-delete").addEventListener("click", deleteSelected);
     $("btn-clear").addEventListener("click", () => {
       if (!window.confirm("Den gesamten Lagerplan löschen?")) return;
@@ -952,6 +1581,41 @@
       refresh();
     });
     $("btn-example").addEventListener("click", loadExample);
+    function printOptions() {
+      const format = $("print-format").value || "A4";
+      const tileA4 = $("print-tile-a4").checked && format !== "A4";
+      return { format, tileA4 };
+    }
+
+    function syncPrintHint() {
+      const format = $("print-format").value || "A4";
+      const tile = $("print-tile-a4");
+      tile.disabled = format === "A4";
+      $("print-hint").textContent = window.LPPdf.printHint(format, tile.checked);
+    }
+
+    $("print-format").addEventListener("change", syncPrintHint);
+    $("print-tile-a4").addEventListener("change", syncPrintHint);
+    syncPrintHint();
+
+    $("btn-pdf").addEventListener("click", () => {
+      const { format, tileA4 } = printOptions();
+      try {
+        window.LPPdf.downloadPdf(state, format, tileA4);
+      } catch (err) {
+        console.error(err);
+        window.alert("Das PDF konnte nicht erzeugt werden.");
+      }
+    });
+    $("btn-print").addEventListener("click", () => {
+      const { format, tileA4 } = printOptions();
+      try {
+        window.LPPdf.printPlan(state, format, tileA4);
+      } catch (err) {
+        console.error(err);
+        window.alert("Drucken ist fehlgeschlagen.");
+      }
+    });
     $("btn-save").addEventListener("click", () => {
       const blob = new Blob([JSON.stringify(exportData(), null, 2)], { type: "application/json" });
       const a = document.createElement("a");
@@ -978,40 +1642,86 @@
       fileImport.value = "";
     });
 
+    syncGridControls();
     $("snap-grid").addEventListener("change", () => {
       state.snap = $("snap-grid").checked;
+      persist();
     });
     $("show-grid").addEventListener("change", () => {
       state.showGrid = $("show-grid").checked;
+      persist();
+      refresh();
+    });
+    $("show-outer-grid").addEventListener("change", () => {
+      state.showOuterGrid = $("show-outer-grid").checked;
+      persist();
       refresh();
     });
     $("show-dimensions").addEventListener("change", () => {
       state.showDims = $("show-dimensions").checked;
-      refresh();
-    });
-    $("grid-size").addEventListener("change", () => {
-      state.grid = Number($("grid-size").value) || 10;
       persist();
       refresh();
     });
+    document.querySelectorAll("input[name=inner-unit]").forEach((el) => {
+      el.addEventListener("change", () => {
+        const unit = el.value === "m" ? "m" : "cm";
+        const prefer = (unit === "m" && state.grid < 50) ? 100 : state.grid;
+        fillStepSelect($("grid-in-step"), unit, prefer);
+        readGridFromUi();
+      });
+    });
+    document.querySelectorAll("input[name=outer-unit]").forEach((el) => {
+      el.addEventListener("change", () => {
+        const unit = el.value === "cm" ? "cm" : "m";
+        const prefer = (unit === "cm" && state.outerGrid >= 200) ? 100 : state.outerGrid;
+        fillStepSelect($("grid-out-step"), unit, prefer);
+        readGridFromUi();
+      });
+    });
+    $("grid-in-step").addEventListener("change", readGridFromUi);
+    $("grid-out-step").addEventListener("change", readGridFromUi);
     ["hall-height", "wall-thick"].forEach((id) => {
       $(id).addEventListener("change", applyHallFields);
     });
-    ["block-name", "block-w", "block-d", "block-h", "pallet-name", "pallet-w", "pallet-d", "pallet-h", "pallet-bays", "pallet-levels", "pallet-first", "cant-name", "cant-w", "cant-arm", "cant-h", "cant-levels", "cant-cols", "cant-sided"].forEach((id) => {
+    ["block-name", "block-w", "block-d", "block-h", "pallet-name", "pallet-w", "pallet-d", "pallet-h", "pallet-bays", "pallet-levels", "pallet-first", "cant-name", "cant-w", "cant-arm", "cant-h", "cant-levels", "cant-cols", "cant-sided", "plat-name", "plat-w", "plat-d", "plat-h", "gal-name", "gal-w", "gal-d", "gal-h", "inner-wall-thick", "inner-wall-h", "path-width"].forEach((id) => {
       $(id).addEventListener("change", applySelectedFromForms);
     });
     ["open-w", "open-h", "open-sill"].forEach((id) => {
       $(id).addEventListener("change", applyOpeningFromForms);
     });
 
+    $("context-menu").addEventListener("pointerdown", (evt) => evt.stopPropagation());
     $("context-menu").addEventListener("click", (evt) => {
+      evt.stopPropagation();
       const action = evt.target.closest("[data-action]");
-      if (!action) return;
+      if (!action || action.disabled) return;
+      if (action.dataset.action === "undo") undo();
       if (action.dataset.action === "rotate") $("btn-rotate").click();
       if (action.dataset.action === "dup") duplicateSelected();
       if (action.dataset.action === "delete") deleteSelected();
       hideMenu();
     });
+    ["ctx-path-name", "ctx-path-len", "ctx-path-width"].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("change", applyPathFromContext);
+      el.addEventListener("keydown", (evt) => {
+        if (evt.key === "Enter") {
+          evt.preventDefault();
+          applyPathFromContext();
+        }
+      });
+    });
+    const ctxWidth = $("ctx-path-width");
+    if (ctxWidth) {
+      ctxWidth.addEventListener("input", () => {
+        const item = selectedItem();
+        if (!item || item.type !== "path") return;
+        const v = Number(ctxWidth.value);
+        if (!Number.isFinite(v) || v < 40 || v > 2000) return;
+        applyPathEdit(item, { width: v }, { skipHistory: true });
+      });
+    }
 
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
@@ -1028,7 +1738,13 @@
     window.addEventListener("keydown", (evt) => {
       if (evt.code === "Space") spacePan = true;
       if (evt.key === "Escape") {
-        if (state.tool === "draw" && state.outline.points.length && !state.outline.closed) {
+        if (isDialogOpen()) {
+          closeDialogs();
+          return;
+        }
+        if (state.draftSegment) {
+          state.draftSegment = null;
+        } else if (state.tool === "draw" && state.outline.points.length && !state.outline.closed) {
           state.outline.points.pop();
           persist();
         } else {
@@ -1058,8 +1774,12 @@
     return tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA";
   }
 
-  bindPresets();
-  bindUi();
+  try {
+    bindPresets();
+    bindUi();
+  } catch (err) {
+    console.error(err);
+  }
   if (window.ResizeObserver) {
     let lastKey = "";
     new ResizeObserver(() => {
@@ -1072,13 +1792,18 @@
   }
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      if (restore()) {
-        fitView();
-      } else {
-        loadExample();
-        history.length = 0;
-        $("btn-undo").disabled = true;
+      try {
+        if (restore()) {
+          fitView();
+          updateHint();
+          return;
+        }
+      } catch (err) {
+        console.error(err);
       }
+      loadExample();
+      history.length = 0;
+      $("btn-undo").disabled = true;
       updateHint();
     });
   });

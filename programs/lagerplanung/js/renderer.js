@@ -77,35 +77,100 @@
     ctx.fillRect(0, 0, w, h);
   }
 
-  function drawWorldGrid(ctx, cam, view, grid, bounds) {
+  function majorStep(grid) {
+    if (grid >= 200) return grid * 5;
+    if (grid >= 100) return 500;
+    if (grid >= 50) return 100;
+    return 100;
+  }
+
+  function isMajorCoord(v, major) {
+    const n = Math.round(v);
+    return ((n % major) + major) % major === 0;
+  }
+
+  function drawWorldGrid(ctx, cam, view, grid) {
     if (!grid) return;
     const step = grid;
-    const major = grid >= 50 ? grid * 2 : 100;
+    const major = majorStep(grid);
+    const minPx = 4;
+    const drawMinor = step * cam.zoom >= minPx;
     const topLeft = screenToWorld({ x: 0, y: 0 }, cam, view);
     const botRight = screenToWorld({ x: view.w, y: view.h }, cam, view);
     const x0 = Math.floor(topLeft.x / step) * step;
     const y0 = Math.floor(topLeft.y / step) * step;
     ctx.save();
     for (let x = x0; x <= botRight.x + step; x += step) {
+      const isMajor = isMajorCoord(x, major);
+      if (!drawMinor && !isMajor) continue;
       const s = worldToScreen({ x, y: 0 }, cam, view);
       ctx.beginPath();
-      ctx.strokeStyle = Math.round(x) % major === 0 ? "rgba(148,163,184,0.28)" : C.grid;
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isMajor ? "rgba(148,163,184,0.32)" : "rgba(148,163,184,0.12)";
+      ctx.lineWidth = isMajor ? 1.15 : 1;
       ctx.moveTo(s.x, 0);
       ctx.lineTo(s.x, view.h);
       ctx.stroke();
     }
     for (let y = y0; y <= botRight.y + step; y += step) {
+      const isMajor = isMajorCoord(y, major);
+      if (!drawMinor && !isMajor) continue;
       const s = worldToScreen({ x: 0, y }, cam, view);
       ctx.beginPath();
-      ctx.strokeStyle = Math.round(y) % major === 0 ? "rgba(148,163,184,0.28)" : C.grid;
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isMajor ? "rgba(148,163,184,0.32)" : "rgba(148,163,184,0.12)";
+      ctx.lineWidth = isMajor ? 1.15 : 1;
       ctx.moveTo(0, s.y);
       ctx.lineTo(view.w, s.y);
       ctx.stroke();
     }
     ctx.restore();
-    if (bounds) drawRulers(ctx, cam, view, bounds);
+  }
+
+  function clipFloor(ctx, points, cam, view) {
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const s = worldToScreen(p, cam, view);
+      if (i === 0) ctx.moveTo(s.x, s.y);
+      else ctx.lineTo(s.x, s.y);
+    });
+    ctx.closePath();
+  }
+
+  function drawFloorGrid(ctx, points, cam, view, grid) {
+    if (!grid || !points || points.length < 3) return;
+    const bounds = G.polygonBounds(points);
+    const step = grid;
+    const major = majorStep(grid);
+    const drawMinor = step * cam.zoom >= 4;
+    ctx.save();
+    clipFloor(ctx, points, cam, view);
+    ctx.clip();
+    const x0 = Math.floor(bounds.x / step) * step;
+    const y0 = Math.floor(bounds.y / step) * step;
+    for (let x = x0; x <= bounds.x + bounds.w + step; x += step) {
+      const isMajor = isMajorCoord(x, major);
+      if (!drawMinor && !isMajor) continue;
+      const s1 = worldToScreen({ x, y: bounds.y }, cam, view);
+      const s2 = worldToScreen({ x, y: bounds.y + bounds.d }, cam, view);
+      ctx.beginPath();
+      ctx.strokeStyle = isMajor ? "rgba(125, 211, 252, 0.55)" : "rgba(148, 163, 184, 0.32)";
+      ctx.lineWidth = isMajor ? 1.25 : 1;
+      ctx.moveTo(s1.x, s1.y);
+      ctx.lineTo(s2.x, s2.y);
+      ctx.stroke();
+    }
+    for (let y = y0; y <= bounds.y + bounds.d + step; y += step) {
+      const isMajor = isMajorCoord(y, major);
+      if (!drawMinor && !isMajor) continue;
+      const s1 = worldToScreen({ x: bounds.x, y }, cam, view);
+      const s2 = worldToScreen({ x: bounds.x + bounds.w, y }, cam, view);
+      ctx.beginPath();
+      ctx.strokeStyle = isMajor ? "rgba(125, 211, 252, 0.55)" : "rgba(148, 163, 184, 0.32)";
+      ctx.lineWidth = isMajor ? 1.25 : 1;
+      ctx.moveTo(s1.x, s1.y);
+      ctx.lineTo(s2.x, s2.y);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawRulers(ctx, cam, view, bounds) {
@@ -282,7 +347,7 @@
     ctx.restore();
   }
 
-  function drawItem(ctx, item, state, cam, view) {
+  function drawItem(ctx, item, state, cam, view, pass) {
     const b = G.itemBBox(item);
     const origin = worldToScreen({ x: b.x, y: b.y }, cam, view);
     const localW = item.w * cam.zoom;
@@ -290,8 +355,56 @@
     const boxW = b.w * cam.zoom;
     const boxD = b.d * cam.zoom;
     const selected = state.selected && state.selected.kind === "item" && state.selected.id === item.id;
-    const colliding = state.collidingIds && state.collidingIds.has(item.id);
-    const outside = state.outsideIds && state.outsideIds.has(item.id);
+    const colliding = item.type !== "path" && state.collidingIds && state.collidingIds.has(item.id);
+    const outside = item.type !== "path" && state.outsideIds && state.outsideIds.has(item.id);
+
+    if (item.type === "path" && pass === "fill") {
+      ctx.save();
+      ctx.translate(origin.x + boxW / 2, origin.y + boxD / 2);
+      ctx.rotate((item.rot || 0) * Math.PI / 180);
+      ctx.translate(-localW / 2, -localD / 2);
+      drawPath(ctx, localW, localD);
+      ctx.restore();
+      return;
+    }
+    if (item.type === "path" && pass === "overlay") {
+      ctx.save();
+      ctx.translate(origin.x + boxW / 2, origin.y + boxD / 2);
+      ctx.rotate((item.rot || 0) * Math.PI / 180);
+      ctx.translate(-localW / 2, -localD / 2);
+      if (selected) {
+        ctx.strokeStyle = C.select;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(0, 0, localW, localD);
+      }
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "#1c1917";
+      ctx.font = "bold 11px Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const cx = origin.x + boxW / 2;
+      const cy = origin.y + boxD / 2;
+      const vertical = boxD > boxW + 8;
+      ctx.translate(cx, cy);
+      if (vertical) ctx.rotate(-Math.PI / 2);
+      ctx.fillText(item.name, 0, state.showDims ? -7 : 0);
+      if (state.showDims) {
+        ctx.font = "10px Segoe UI, sans-serif";
+        ctx.fillStyle = "rgba(28, 25, 23, 0.82)";
+        ctx.fillText(`${Math.round(item.w)} × ${Math.round(item.d)} cm`, 0, 8);
+      }
+      ctx.restore();
+      if (selected) {
+        ctx.fillStyle = C.select;
+        ctx.beginPath();
+        ctx.arc(origin.x + boxW - 8, origin.y + 8, 6, 0, Math.PI * 2);
+        ctx.fill();
+        drawSegmentHandles(ctx, item, cam, view);
+      }
+      return;
+    }
+
     ctx.save();
     ctx.translate(origin.x + boxW / 2, origin.y + boxD / 2);
     ctx.rotate((item.rot || 0) * Math.PI / 180);
@@ -299,7 +412,11 @@
 
     if (item.type === "block") drawBlock(ctx, item, localW, localD);
     else if (item.type === "pallet") drawPalletRack(ctx, item, localW, localD, cam.zoom);
-    else drawCantilever(ctx, item, localW, localD, cam.zoom);
+    else if (item.type === "cantilever") drawCantilever(ctx, item, localW, localD, cam.zoom);
+    else if (item.type === "wall") drawInnerWall(ctx, localW, localD);
+    else if (item.type === "line") drawMarkLine(ctx, localW, localD);
+    else if (item.type === "platform") drawPlatform(ctx, localW, localD);
+    else if (item.type === "gallery") drawGallery(ctx, localW, localD);
 
     ctx.strokeStyle = colliding ? C.collide : outside ? C.outside : selected ? C.select : "rgba(226,232,240,0.55)";
     ctx.lineWidth = selected || colliding ? 3 : 1.4;
@@ -329,7 +446,34 @@
       ctx.beginPath();
       ctx.arc(origin.x + boxW - 8, origin.y + 8, 6, 0, Math.PI * 2);
       ctx.fill();
+      if (item.type === "wall") drawSegmentHandles(ctx, item, cam, view);
     }
+  }
+
+  function drawSegmentHandles(ctx, item, cam, view) {
+    const stroke = item.type === "wall" ? "#dc2626" : C.path;
+    ctx.save();
+    G.pathSidePoints(item).forEach((p) => {
+      const s = worldToScreen(p, cam, view);
+      ctx.fillStyle = "#fff7ed";
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.rect(s.x - 6, s.y - 6, 12, 12);
+      ctx.fill();
+      ctx.stroke();
+    });
+    G.pathEndPoints(item).forEach((p) => {
+      const s = worldToScreen(p, cam, view);
+      ctx.beginPath();
+      ctx.fillStyle = "#fff7ed";
+      ctx.arc(s.x, s.y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = stroke;
+      ctx.stroke();
+    });
+    ctx.restore();
   }
 
   function drawBlock(ctx, item, w, h) {
@@ -377,6 +521,87 @@
     }
   }
 
+  function drawInnerWall(ctx, w, h) {
+    ctx.fillStyle = C.innerWallFill;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = C.innerWall;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, w, h);
+    ctx.fillStyle = "rgba(127, 29, 29, 0.35)";
+    const step = Math.max(8, Math.min(w, h) * 0.35);
+    for (let y = 3; y < h; y += step) {
+      ctx.fillRect(0, y, w, 2);
+    }
+  }
+
+  function drawMarkLine(ctx, w, h) {
+    const thick = Math.max(2, Math.min(w, h));
+    ctx.save();
+    ctx.strokeStyle = C.markLine;
+    ctx.lineWidth = Math.max(2, thick);
+    ctx.setLineDash([10, 7]);
+    ctx.lineCap = "round";
+    if (w >= h) {
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(w / 2, 0);
+      ctx.lineTo(w / 2, h);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPath(ctx, w, h) {
+    ctx.fillStyle = C.pathFill;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  function drawPlatform(ctx, w, h) {
+    ctx.fillStyle = C.platformFill;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = C.platform;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, w, h);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(2, 2, w - 4, h - 4);
+    ctx.clip();
+    ctx.strokeStyle = "rgba(253, 186, 116, 0.45)";
+    for (let x = -h; x < w + h; x += 14) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + h, h);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawGallery(ctx, w, h) {
+    ctx.fillStyle = C.galleryFill;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = C.gallery;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, w, h);
+    ctx.strokeStyle = "rgba(196, 181, 253, 0.45)";
+    const step = 16;
+    for (let x = 8; x < w; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 8; y < h; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+  }
+
   function drawCantilever(ctx, item, w, h, zoom) {
     ctx.fillStyle = "rgba(34, 197, 94, 0.45)";
     ctx.fillRect(0, 0, w, h);
@@ -396,24 +621,47 @@
   }
 
   function drawDraft(ctx, state, cam, view) {
-    const pts = state.outline.points;
-    if (state.tool !== "draw" || !pts.length || !state.cursorWorld) return;
-    const last = pts[pts.length - 1];
+    const draftFrom = state.tool === "draw" && state.outline.points.length
+      ? state.outline.points[state.outline.points.length - 1]
+      : (state.draftSegment && state.draftSegment.start);
+    if (!draftFrom || !state.cursorWorld) return;
+    if (state.tool !== "draw" && state.tool !== "wall" && state.tool !== "line" && state.tool !== "path") return;
     let target = state.cursorWorld;
-    if (state.shiftOrtho) target = G.orthoFrom(last, target);
-    const a = worldToScreen(last, cam, view);
+    if (state.shiftOrtho || state.tool === "wall" || state.tool === "line" || state.tool === "path") {
+      target = G.orthoFrom(draftFrom, target);
+    }
+    const a = worldToScreen(draftFrom, cam, view);
     const b = worldToScreen(target, cam, view);
     ctx.save();
-    ctx.strokeStyle = C.dimLive;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([7, 5]);
+    if (state.tool === "path") {
+      ctx.strokeStyle = C.path;
+      ctx.lineWidth = Math.max(4, (state.draftSegment && state.draftSegment.thick ? state.draftSegment.thick : 250) * cam.zoom);
+      ctx.globalAlpha = 0.88;
+      ctx.lineCap = "butt";
+    } else {
+      ctx.strokeStyle = state.tool === "line" ? C.markLine : C.innerWallFill;
+      ctx.lineWidth = state.tool === "wall" ? Math.max(4, (state.draftSegment && state.draftSegment.thick ? state.draftSegment.thick : 20) * cam.zoom) : 2;
+      ctx.setLineDash(state.tool === "line" ? [10, 6] : []);
+      ctx.globalAlpha = state.tool === "wall" ? 0.92 : 1;
+    }
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
     ctx.stroke();
     ctx.setLineDash([]);
-    drawEdgeDim(ctx, last, target, cam, view, G.fmtCm(G.dist(last, target)), true);
+    ctx.globalAlpha = 1;
+    drawEdgeDim(ctx, draftFrom, target, cam, view, G.fmtCm(G.dist(draftFrom, target)), true);
     ctx.restore();
+  }
+
+  function drawOrder(items) {
+    const rank = (item) => {
+      if (item.type === "path") return 0;
+      if (item.type === "platform" || item.type === "gallery") return 1;
+      if (item.type === "wall" || item.type === "line") return 3;
+      return 2;
+    };
+    return items.slice().sort((a, b) => rank(a) - rank(b));
   }
 
   function drawPlan(ctx, state, cam, view) {
@@ -421,9 +669,22 @@
     const bounds = state.outline.points.length
       ? G.polygonBounds(state.outline.points)
       : null;
-    if (state.showGrid) drawWorldGrid(ctx, cam, view, state.grid, bounds);
+    if (state.showOuterGrid) {
+      drawWorldGrid(ctx, cam, view, state.outerGrid || 100);
+    } else if (state.showGrid && !state.outline.closed) {
+      drawWorldGrid(ctx, cam, view, state.outerGrid || state.grid || 100);
+    }
+    if (bounds) drawRulers(ctx, cam, view, bounds);
     if (state.outline.closed) drawFloor(ctx, state.outline.points, cam, view);
-    state.items.forEach((item) => drawItem(ctx, item, state, cam, view));
+    if (state.showGrid && state.outline.closed) {
+      drawFloorGrid(ctx, state.outline.points, cam, view, state.grid);
+    }
+    const ordered = drawOrder(state.items);
+    const paths = ordered.filter((item) => item.type === "path");
+    const rest = ordered.filter((item) => item.type !== "path");
+    paths.forEach((item) => drawItem(ctx, item, state, cam, view, "fill"));
+    paths.forEach((item) => drawItem(ctx, item, state, cam, view, "overlay"));
+    rest.forEach((item) => drawItem(ctx, item, state, cam, view));
     drawWalls(ctx, state, cam, view);
     drawDraft(ctx, state, cam, view);
   }
@@ -434,7 +695,7 @@
     ctx.fillStyle = C.text;
     ctx.font = "13px Segoe UI, sans-serif";
     ctx.textAlign = "left";
-    if (!item || (item.type !== "pallet" && item.type !== "cantilever" && item.type !== "block")) {
+    if (!item || (item.type !== "pallet" && item.type !== "cantilever" && item.type !== "block" && item.type !== "platform" && item.type !== "gallery" && item.type !== "wall")) {
       ctx.fillStyle = C.dim;
       ctx.fillText("Regal oder Blocklager in der Draufsicht auswählen, um die Ansicht zu sehen.", 28, 40);
       return;
@@ -464,7 +725,9 @@
 
     if (item.type === "pallet") drawPalletElevation(ctx, item, ox, oy, scale, hallH, axis);
     else if (item.type === "cantilever") drawCantileverElevation(ctx, item, ox, oy, scale, hallH, axis);
-    else drawBlockElevation(ctx, item, ox, oy, scale, hallH, axis);
+    else if (item.type === "platform" || item.type === "gallery" || item.type === "wall") {
+      drawBlockElevation(ctx, item, ox, oy, scale, hallH, axis);
+    } else drawBlockElevation(ctx, item, ox, oy, scale, hallH, axis);
 
     ctx.fillStyle = C.dim;
     ctx.font = "11px Segoe UI, sans-serif";
@@ -575,6 +838,10 @@
     return view;
   }
 
+  function drawPlanTo(ctx, state, cam, view) {
+    drawPlan(ctx, state, cam, view);
+  }
+
   global.LPRender = {
     resizeCanvas,
     worldToScreen,
@@ -582,5 +849,6 @@
     canvasPoint,
     fitCamera,
     draw,
+    drawPlanTo,
   };
 })(window);

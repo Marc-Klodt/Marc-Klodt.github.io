@@ -26,10 +26,20 @@
     { type: "presse", group: "maschine", label: "Ballenpresse", w: 200, d: 120, h: 200 },
   ];
 
+  const FONT = "Segoe UI, system-ui, sans-serif";
   const FILL = {
-    regal: { body: "#4d6572", mark: "#2f414a" },
-    tisch: { body: "#8a6a3d", mark: "#5c4524" },
-    maschine: { body: "#5a4a42", mark: "#3c312c" },
+    regal: { body: "#3b82f6", mark: "#1d4ed8" },
+    tisch: { body: "#d97706", mark: "#92400e" },
+    maschine: { body: "#64748b", mark: "#334155" },
+  };
+  const GFX = {
+    mark: "#94a3b8",
+    label: "#e8edf4",
+    muted: "#8b9cb3",
+    grid: "#3d4d66",
+    room: "#8b9cb3",
+    ink: "#0f1419",
+    line: "#93c5fd",
   };
 
   const VB_PAD = { left: 92, top: 62, right: 56, bottom: 56 };
@@ -282,7 +292,7 @@
     btn.appendChild(svgEl("circle", {
       cx, cy, r,
       fill: "#e8c547",
-      stroke: "#1d232b",
+      stroke: GFX.ink,
       "stroke-width": Math.max(1.6, r * 0.1),
     }));
     const s = r * 0.76;
@@ -292,7 +302,7 @@
         `${cx + s * 0.75},${cy}`,
         `${cx - s * 0.45},${cy + s * 0.7}`,
       ].join(" "),
-      fill: "#1d232b",
+      fill: GFX.ink,
       "pointer-events": "none",
     }));
     parent.appendChild(btn);
@@ -345,13 +355,13 @@
           const y = (b.d / bays) * i;
           g.appendChild(svgEl("line", {
             x1: 0, y1: y, x2: b.w, y2: y,
-            stroke: "#d8d2c6", "stroke-width": 2, "stroke-dasharray": "8 8",
+            stroke: GFX.mark, "stroke-width": 2, "stroke-dasharray": "8 8",
           }));
         } else {
           const x = (b.w / bays) * i;
           g.appendChild(svgEl("line", {
             x1: x, y1: 0, x2: x, y2: b.d,
-            stroke: "#d8d2c6", "stroke-width": 2, "stroke-dasharray": "8 8",
+            stroke: GFX.mark, "stroke-width": 2, "stroke-dasharray": "8 8",
           }));
         }
       }
@@ -360,22 +370,22 @@
       for (let i = 1; i < n; i += 1) {
         g.appendChild(svgEl("line", {
           x1: (b.w / n) * i, y1: 4, x2: (b.w / n) * i, y2: b.d - 4,
-          stroke: "#d8d2c6", "stroke-width": 3,
+          stroke: GFX.mark, "stroke-width": 3,
         }));
       }
     } else if (item.group === "tisch") {
       g.appendChild(svgEl("rect", {
         x: b.w * 0.12, y: b.d * 0.12, width: b.w * 0.76, height: b.d * 0.76,
-        fill: "none", stroke: "#e7d7b5", "stroke-width": 4,
+        fill: "none", stroke: "#fbbf24", "stroke-width": 4,
       }));
     } else if (item.group === "maschine") {
       g.appendChild(svgEl("circle", {
         cx: b.w * 0.32, cy: b.d * 0.5, r: Math.min(b.w, b.d) * 0.18,
-        fill: "none", stroke: "#cfc8ba", "stroke-width": 5,
+        fill: "none", stroke: GFX.mark, "stroke-width": 5,
       }));
       g.appendChild(svgEl("line", {
         x1: 8, y1: 8, x2: b.w - 8, y2: b.d - 8,
-        stroke: "#cfc8ba", "stroke-width": 3,
+        stroke: GFX.mark, "stroke-width": 3,
       }));
     }
 
@@ -388,9 +398,9 @@
       y: b.d / 2,
       "text-anchor": "middle",
       "dominant-baseline": "middle",
-      fill: "#fbf8f1",
+      fill: GFX.label,
       "font-size": fs,
-      "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      "font-family": FONT,
       "pointer-events": "none",
     }, item.name);
     if (vertical) {
@@ -406,21 +416,21 @@
     const b = bbox(item);
     parent.appendChild(svgEl("line", {
       x1: b.x, y1: b.y - 18, x2: b.x + b.w, y2: b.y - 18,
-      stroke: "#1d232b", "stroke-width": 2,
+      stroke: GFX.line, "stroke-width": 2,
     }));
     parent.appendChild(svgEl("text", {
       x: b.x + b.w / 2, y: b.y - 24, "text-anchor": "middle",
-      fill: "#1d232b", "font-size": 28,
-      "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      fill: GFX.line, "font-size": 28,
+      "font-family": FONT,
     }, `${Math.round(b.w)} cm`));
     parent.appendChild(svgEl("line", {
       x1: b.x - 18, y1: b.y, x2: b.x - 18, y2: b.y + b.d,
-      stroke: "#1d232b", "stroke-width": 2,
+      stroke: GFX.line, "stroke-width": 2,
     }));
     parent.appendChild(svgEl("text", {
       x: b.x - 26, y: b.y + b.d / 2, "text-anchor": "end",
-      fill: "#1d232b", "font-size": 28,
-      "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      fill: GFX.line, "font-size": 28,
+      "font-family": FONT,
     }, `${Math.round(b.d)} cm`));
   }
 
@@ -432,33 +442,33 @@
   }
 
   function drawRulers(svg, rw, rd) {
-    const font = "IBM Plex Sans, Segoe UI, sans-serif";
+    const font = FONT;
     const fs = 24;
     axisTicks(rw).forEach((x) => {
       const major = x % 500 === 0 || x === 0 || x === rw;
       svg.appendChild(svgEl("line", {
         x1: x, y1: 0, x2: x, y2: major ? -14 : -8,
-        stroke: "#5d6670", "stroke-width": major ? 3 : 2,
+        stroke: GFX.muted, "stroke-width": major ? 3 : 2,
       }));
       svg.appendChild(svgEl("text", {
         x, y: -20, "text-anchor": "middle",
-        fill: "#3f464d", "font-size": fs, "font-family": font,
+        fill: GFX.muted, "font-size": fs, "font-family": font,
       }, fmtM(x)));
     });
     axisTicks(rd).forEach((y) => {
       const major = y % 500 === 0 || y === 0 || y === rd;
       svg.appendChild(svgEl("line", {
         x1: 0, y1: y, x2: major ? -14 : -8, y2: y,
-        stroke: "#5d6670", "stroke-width": major ? 3 : 2,
+        stroke: GFX.muted, "stroke-width": major ? 3 : 2,
       }));
       svg.appendChild(svgEl("text", {
         x: -20, y: y + 8, "text-anchor": "end",
-        fill: "#3f464d", "font-size": fs, "font-family": font,
+        fill: GFX.muted, "font-size": fs, "font-family": font,
       }, fmtM(y)));
     });
     svg.appendChild(svgEl("text", {
       x: -20, y: -20, "text-anchor": "end",
-      fill: "#5d6670", "font-size": 20, "font-family": font,
+      fill: GFX.muted, "font-size": 20, "font-family": font,
     }, "m"));
   }
 
@@ -479,7 +489,7 @@
     pat.appendChild(svgEl("path", {
       d: `M ${minor} 0 L 0 0 0 ${minor}`,
       fill: "none",
-      stroke: "#7d7468",
+      stroke: GFX.grid,
       "stroke-width": 3,
     }));
     defs.appendChild(pat);
@@ -487,23 +497,27 @@
 
     svg.appendChild(svgEl("rect", {
       x: 0, y: 0, width: rw, height: rd,
-      fill: "url(#floor-grid)", stroke: "#1d232b", "stroke-width": 6,
+      fill: "#1a2332",
+    }));
+    svg.appendChild(svgEl("rect", {
+      x: 0, y: 0, width: rw, height: rd,
+      fill: "url(#floor-grid)", stroke: GFX.room, "stroke-width": 6,
     }));
     drawRulers(svg, rw, rd);
 
     svg.appendChild(svgEl("line", {
-      x1: 0, y1: rd + 28, x2: rw, y2: rd + 28, stroke: "#5d6670", "stroke-width": 2,
+      x1: 0, y1: rd + 28, x2: rw, y2: rd + 28, stroke: GFX.muted, "stroke-width": 2,
     }));
     svg.appendChild(svgEl("text", {
-      x: rw / 2, y: rd + 52, "text-anchor": "middle", fill: "#5d6670", "font-size": 32,
-      "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      x: rw / 2, y: rd + 52, "text-anchor": "middle", fill: GFX.muted, "font-size": 32,
+      "font-family": FONT,
     }, `${fmtM(rw)} m Breite`));
     svg.appendChild(svgEl("line", {
-      x1: rw + 28, y1: 0, x2: rw + 28, y2: rd, stroke: "#5d6670", "stroke-width": 2,
+      x1: rw + 28, y1: 0, x2: rw + 28, y2: rd, stroke: GFX.muted, "stroke-width": 2,
     }));
     svg.appendChild(svgEl("text", {
-      x: rw + 36, y: rd / 2, fill: "#5d6670", "font-size": 32,
-      "font-family": "IBM Plex Sans, Segoe UI, sans-serif",
+      x: rw + 36, y: rd / 2, fill: GFX.muted, "font-size": 32,
+      "font-family": FONT,
     }, `${fmtM(rd)} m Tiefe`));
 
     state.items.forEach((item) => svg.appendChild(drawItem(item)));

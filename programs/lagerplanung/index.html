@@ -15,7 +15,21 @@
       <div class="header-brand">
         <img src="icons/lagerplanung.svg?v=2" alt="" class="header-logo" width="44" height="44">
         <div>
-          <h1>Lagerplanung</h1>
+          <div class="header-title-row">
+            <h1>Lagerplanung</h1>
+            <div class="header-guides" role="group" aria-label="Hilfe">
+              <button type="button" class="guide-btn" id="btn-guide" aria-haspopup="dialog" aria-controls="dialog-guide" aria-expanded="false" title="Anleitung">
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+                <span class="guide-btn-core" aria-hidden="true">?</span>
+                <span class="visually-hidden">Anleitung zum Bedienen</span>
+              </button>
+              <button type="button" class="guide-btn guide-btn-info" id="btn-info" aria-haspopup="dialog" aria-controls="dialog-info" aria-expanded="false" title="Info zum Programm">
+                <span class="guide-btn-rim" aria-hidden="true"></span>
+                <span class="guide-btn-core" aria-hidden="true">i</span>
+                <span class="visually-hidden">Info zur Lagerplanung</span>
+              </button>
+            </div>
+          </div>
           <p class="subtitle">Maßstabsgetreuer Grundriss für Blocklager, Paletten- und Kragarmregale</p>
         </div>
       </div>
@@ -71,6 +85,61 @@
           <button type="button" id="btn-place-gate" class="btn" data-open="gate">Tor setzen</button>
           <button type="button" id="btn-place-window" class="btn" data-open="window">Fenster setzen</button>
         </div>
+      </section>
+
+      <section class="panel">
+        <h2>Innenausbau</h2>
+        <p class="panel-note">Mauern, Linien und gelbe Wege im Grundriss ziehen. Auf Mauern, Linien und Wegen kann nichts stehen. Auf Podesten und Emporen können Regale gestellt werden.</p>
+        <div class="input-row">
+          <label>Mauerstärke (cm)
+            <input type="number" id="inner-wall-thick" min="20" max="80" step="1" value="20">
+          </label>
+          <label>Mauerhöhe (cm)
+            <input type="number" id="inner-wall-h" min="50" max="3000" step="1" value="800">
+          </label>
+        </div>
+        <div class="btn-row">
+          <button type="button" id="btn-place-wall" class="btn">Mauer ziehen</button>
+          <button type="button" id="btn-place-line" class="btn">Linie ziehen</button>
+        </div>
+        <h3>Weg</h3>
+        <p class="panel-note">Gelber Fahr- und Gehweg. Zwei Punkte klicken: Start und Ende. Die Breite gilt rechtwinklig zur Zugrichtung.</p>
+        <label>Wegbreite (cm)
+          <input type="number" id="path-width" min="40" max="2000" step="1" value="250">
+        </label>
+        <button type="button" id="btn-place-path" class="btn btn-primary">Weg ziehen</button>
+        <h3>Podest</h3>
+        <label>Bezeichnung
+          <input type="text" id="plat-name" maxlength="40" value="Podest">
+        </label>
+        <div class="input-row">
+          <label>Länge (cm)
+            <input type="number" id="plat-w" min="40" max="10000" step="1" value="400">
+          </label>
+          <label>Breite (cm)
+            <input type="number" id="plat-d" min="40" max="10000" step="1" value="240">
+          </label>
+        </div>
+        <label>Podesthöhe (cm)
+          <input type="number" id="plat-h" min="10" max="400" step="1" value="80">
+        </label>
+        <button type="button" id="btn-place-platform" class="btn btn-primary">Podest platzieren</button>
+        <h3>Empore</h3>
+        <label>Bezeichnung
+          <input type="text" id="gal-name" maxlength="40" value="Empore">
+        </label>
+        <div class="input-row">
+          <label>Länge (cm)
+            <input type="number" id="gal-w" min="80" max="10000" step="1" value="800">
+          </label>
+          <label>Breite (cm)
+            <input type="number" id="gal-d" min="80" max="10000" step="1" value="600">
+          </label>
+        </div>
+        <label>Fußbodenhöhe (cm)
+          <input type="number" id="gal-h" min="80" max="1500" step="1" value="350">
+        </label>
+        <button type="button" id="btn-place-gallery" class="btn btn-primary">Empore platzieren</button>
       </section>
 
       <section class="panel">
@@ -165,24 +234,47 @@
         <h2>Anzeige</h2>
         <label class="checkbox-label">
           <input type="checkbox" id="snap-grid" checked>
-          Am Raster ausrichten
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="show-grid" checked>
-          Raster anzeigen
+          Automatisch am Raster ausrichten
         </label>
         <label class="checkbox-label">
           <input type="checkbox" id="show-dimensions" checked>
           Maße anzeigen
         </label>
-        <label>Raster
-          <select id="grid-size">
-            <option value="5">5 cm</option>
-            <option value="10" selected>10 cm</option>
-            <option value="20">20 cm</option>
-            <option value="50">50 cm</option>
-            <option value="100">100 cm</option>
-          </select>
+
+        <h3>Lager-Raster</h3>
+        <p class="panel-note">Genauigkeit und Schritt für alles innerhalb des Hallenumrisses.</p>
+        <label class="checkbox-label">
+          <input type="radio" name="inner-unit" value="cm" checked>
+          Zentimeter genau
+        </label>
+        <label class="checkbox-label">
+          <input type="radio" name="inner-unit" value="m">
+          Meter genau
+        </label>
+        <label>Schritt
+          <select id="grid-in-step"></select>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="show-grid" checked>
+          Raster im Lager anzeigen
+        </label>
+
+        <h3>Raster außerhalb</h3>
+        <p class="panel-note">Genauigkeit und Schritt für das Feld um die Halle. Umrisspunkte rasten hier ein.</p>
+        <label class="checkbox-label">
+          <input type="radio" name="outer-unit" value="cm">
+          Zentimeter genau
+        </label>
+        <label class="checkbox-label">
+          <input type="radio" name="outer-unit" value="m" checked>
+          Meter genau
+        </label>
+        <label>Schritt
+          <select id="grid-out-step"></select>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="show-outer-grid" checked>
+          Raster außerhalb anzeigen
         </label>
         <div class="btn-row">
           <button type="button" id="btn-undo" class="btn" disabled>Rückgängig</button>
@@ -192,8 +284,25 @@
 
       <section class="panel">
         <h2>Speichern</h2>
+        <h3>PDF und Druck</h3>
+        <p class="panel-note">Den Lagerplan als PDF sichern oder drucken. A3 und A2 lassen sich auf A4-Blätter aufteilen, wenn der Drucker kein größeres Format kann.</p>
+        <label>Druckgröße
+          <select id="print-format">
+            <option value="A4">A4 (210 × 297 mm)</option>
+            <option value="A3" selected>A3 (297 × 420 mm)</option>
+            <option value="A2">A2 (420 × 594 mm)</option>
+          </select>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="print-tile-a4" checked>
+          Für A4-Drucker aufteilen
+        </label>
+        <p id="print-hint" class="panel-note">A3 wird auf 2 A4-Blätter aufgeteilt. Blätter an den Markierungen zusammenkleben.</p>
+        <button type="button" id="btn-pdf" class="btn btn-primary">Als PDF speichern</button>
+        <button type="button" id="btn-print" class="btn" style="width:100%;margin-top:0.5rem">Drucken</button>
+        <h3>Projektdatei</h3>
         <div class="btn-row">
-          <button type="button" id="btn-save" class="btn btn-primary">Als JSON speichern</button>
+          <button type="button" id="btn-save" class="btn">Als JSON speichern</button>
           <button type="button" id="btn-load" class="btn">Plan laden</button>
         </div>
         <input type="file" id="file-import" accept=".json" class="hidden">
@@ -223,6 +332,11 @@
         <button type="button" class="tool-btn" data-tool="door">Tür</button>
         <button type="button" class="tool-btn" data-tool="gate">Tor</button>
         <button type="button" class="tool-btn" data-tool="window">Fenster</button>
+        <button type="button" class="tool-btn" data-tool="wall">Mauer</button>
+        <button type="button" class="tool-btn" data-tool="line">Linie</button>
+        <button type="button" class="tool-btn" data-tool="path">Weg</button>
+        <button type="button" class="tool-btn" data-tool="platform">Podest</button>
+        <button type="button" class="tool-btn" data-tool="gallery">Empore</button>
         <button type="button" class="tool-btn" data-tool="block">Blocklager</button>
         <button type="button" class="tool-btn" data-tool="pallet">Palettenregal</button>
         <button type="button" class="tool-btn" data-tool="cantilever">Kragarm</button>
@@ -251,7 +365,6 @@
         <div id="detail-content"></div>
         <div class="detail-actions btn-row">
           <button type="button" id="btn-rotate" class="btn" disabled>Drehen 90°</button>
-          <button type="button" id="btn-dup" class="btn" disabled>Duplizieren</button>
           <button type="button" id="btn-delete" class="btn btn-danger" disabled>Löschen</button>
         </div>
       </section>
@@ -263,15 +376,96 @@
   </div>
 
   <div id="context-menu" class="context-menu hidden" role="menu">
+    <button type="button" class="context-menu-item" data-action="undo" role="menuitem">Rückgängig</button>
+    <div id="context-path-edit" class="context-menu-edit hidden">
+      <div class="context-menu-heading">Weg bearbeiten</div>
+      <label>Bezeichnung
+        <input type="text" id="ctx-path-name" maxlength="40">
+      </label>
+      <label>Länge (cm)
+        <input type="number" id="ctx-path-len" min="40" max="50000" step="1">
+      </label>
+      <label>Breite (cm)
+        <input type="number" id="ctx-path-width" min="40" max="2000" step="1">
+      </label>
+    </div>
     <button type="button" class="context-menu-item" data-action="rotate" role="menuitem">Drehen 90°</button>
     <button type="button" class="context-menu-item" data-action="dup" role="menuitem">Duplizieren</button>
     <button type="button" class="context-menu-item" data-action="delete" role="menuitem">Löschen</button>
   </div>
 
-  <script src="js/geometry.js"></script>
-  <script src="js/catalog.js"></script>
-  <script src="js/renderer.js"></script>
-  <script src="js/app.js"></script>
+  <div id="dialog-guide" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-guide-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-guide-title">Anleitung</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <ol class="guide-steps">
+          <li>
+            <strong>Halle anlegen.</strong>
+            Links Länge und Breite in Metern eintragen und „Rechteck-Halle anlegen“ wählen – oder mit „Linien ziehen“ den Umriss Punkt für Punkt zeichnen und anschließend schließen.
+          </li>
+          <li>
+            <strong>Raster einstellen.</strong>
+            Unter Anzeige das Raster innerhalb und außerhalb der Halle wählen (cm oder m). Mit aktivem Einrasten springen Punkte und Einrichtungen auf das Raster.
+          </li>
+          <li>
+            <strong>Öffnungen setzen.</strong>
+            Tür, Tor oder Fenster wählen, Maße festlegen und an eine Außenwand klicken.
+          </li>
+          <li>
+            <strong>Innenausbau zeichnen.</strong>
+            Mauern und Linien mit zwei Klicks ziehen. Gelbe Wege ebenfalls mit Start und Ende. Podeste und Emporen per Klick in die Halle setzen – darauf dürfen später Regale stehen.
+          </li>
+          <li>
+            <strong>Lagertechnik platzieren.</strong>
+            Blocklager, Palettenregal oder Kragarmregal wählen und in der Draufsicht klicken. Nach dem Setzen springt das Werkzeug zurück auf Auswählen.
+          </li>
+          <li>
+            <strong>Bearbeiten.</strong>
+            Objekte verschieben, über die Seitenleiste oder Rechtsklick ändern, um 90° drehen oder duplizieren. Front- und Seitenansicht zeigen das ausgewählte Regal im Aufriss.
+          </li>
+          <li>
+            <strong>Sichern und ausgeben.</strong>
+            Den Plan als PDF speichern oder drucken (A4, A3, A2; bei A4-Drucker aufteilen). Zusätzlich JSON speichern oder laden. Der Plan wird automatisch im Browser zwischengespeichert.
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="dialog-info" class="guide-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="dialog-info-title">
+    <div class="guide-dialog-backdrop" data-close-dialog></div>
+    <div class="guide-dialog-panel">
+      <div class="guide-dialog-head">
+        <h2 id="dialog-info-title">Info zum Programm</h2>
+        <button type="button" class="guide-dialog-close" data-close-dialog aria-label="Schließen">×</button>
+      </div>
+      <div class="guide-dialog-body">
+        <p>Lagerplanung ist ein maßstabsgetreuer Hallengrundriss. Innenmaße werden in Zentimetern geführt, Eingaben für die Halle können in Metern erfolgen. Ziel ist ein belastbarer Layoutplan für Blocklager, Palettenregale und Kragarmregale.</p>
+        <h3>Wozu es da ist</h3>
+        <p>Es hilft, Fläche, Wege und Regalstellung vor der Einrichtung zu prüfen: Was passt in die Halle, wo bleiben Fahrwege frei, und wie hoch darf die Technik bei gegebener Raumhöhe werden?</p>
+        <h3>Was das Programm kann</h3>
+        <ul>
+          <li>Rechteckige oder frei gezeichnete Hallenumrisse mit Türen, Toren und Fenstern</li>
+          <li>Innenmauern, Linien, gelbe Wege sowie Podeste und Emporen</li>
+          <li>Blocklager, Paletten- und Kragarmregale mit Ebenen, Feldern und Höhen</li>
+          <li>Raster und Einrasten getrennt für innen und außen, Kollisions- und Außenprüfung</li>
+          <li>Draufsicht plus Front- und Seitenansicht der ausgewählten Einrichtung</li>
+          <li>PDF- und Druckausgabe in A4, A3 und A2, bei Bedarf auf A4-Blätter aufgeteilt</li>
+        </ul>
+        <p>Auf Mauern, Linien und Wegen kann nichts stehen. Regale dürfen auf Podesten und Emporen platziert werden.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/geometry.js?v=9"></script>
+  <script src="js/catalog.js?v=9"></script>
+  <script src="js/renderer.js?v=9"></script>
+  <script src="js/pdf-export.js?v=9"></script>
+  <script src="js/app.js?v=9"></script>
   <script src="../back.js"></script>
 </body>
 </html>
