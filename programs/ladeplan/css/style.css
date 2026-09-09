@@ -452,21 +452,36 @@ body {
 }
 
 .panel-column--left {
-  width: 320px;
-  max-width: 320px;
+  --panel-left-full-width: 320px;
+  width: var(--panel-left-full-width);
+  max-width: var(--panel-left-full-width);
+  overflow: hidden;
   transition: width 0.25s ease, max-width 0.25s ease;
 }
 
 .panel-column--left.is-collapsed {
-  width: var(--panel-rail-width, 6px);
-  max-width: var(--panel-rail-width, 6px);
+  width: calc(var(--panel-left-full-width) / 2 + var(--panel-rail-width, 6px));
+  max-width: calc(var(--panel-left-full-width) / 2 + var(--panel-rail-width, 6px));
+}
+
+.panel-column--left .panel-column__content {
+  transition: opacity 0.2s ease, flex-basis 0.25s ease, width 0.25s ease, transform 0.25s ease;
 }
 
 .panel-column--left.is-collapsed .panel-column__content {
-  flex: 0 0 0;
-  width: 0;
-  opacity: 0;
-  pointer-events: none;
+  flex: 0 0 calc(var(--panel-left-full-width) / 2);
+  width: calc(var(--panel-left-full-width) / 2);
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.panel-column--left.is-collapsed .sidebar {
+  width: var(--panel-left-full-width);
+  min-width: var(--panel-left-full-width);
+  transform: translateX(calc(var(--panel-left-full-width) / -2));
+  transition: transform 0.25s ease;
+  border-right: none;
 }
 
 .panel-column--right {
@@ -520,10 +535,6 @@ body {
   outline-offset: 1px;
 }
 
-.panel-column--left.is-collapsed .sidebar {
-  border-right: none;
-}
-
 .sidebar {
   background: var(--surface);
   border-right: 1px solid var(--border);
@@ -532,6 +543,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  transition: transform 0.25s ease;
 }
 
 .panel {
@@ -1930,14 +1942,27 @@ select:focus {
   }
 
   .panel-column--left {
+    --panel-left-full-width: 100%;
     width: 100%;
     max-width: none;
   }
 
   .panel-column--left.is-collapsed {
-    width: var(--panel-rail-width, 6px);
-    max-width: var(--panel-rail-width, 6px);
+    width: calc(50% + var(--panel-rail-width, 6px));
+    max-width: calc(50% + var(--panel-rail-width, 6px));
     justify-self: start;
+  }
+
+  .panel-column--left.is-collapsed .panel-column__content {
+    flex: 0 0 50%;
+    width: 50%;
+    transform: none;
+  }
+
+  .panel-column--left.is-collapsed .sidebar {
+    width: 200%;
+    min-width: 200%;
+    transform: translateX(-50%);
   }
 
   .sidebar {
